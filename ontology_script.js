@@ -4,8 +4,7 @@ let playPauseButton;
 let currentFrameSlider;
 let intervalId;
 let isVideoLocked = false;
-
-// Class definitions based on the data model
+let db;
 class Recording {
     constructor(videoPath, fps) {
         this.videoPath = videoPath;
@@ -13,7 +12,6 @@ class Recording {
         this.annotations = [];
     }
 }
-
 class SingleFrameAnnotation {
     constructor(frame, pedTags, egoTags, sceneTags, notes) {
         this.frame = frame;
@@ -23,7 +21,6 @@ class SingleFrameAnnotation {
         this.notes = notes;
     }
 }
-
 class MultiFrameAnnotation {
     constructor(frameStart, frameEnd, pedTags, egoTags, sceneTags, notes) {
         this.frameStart = frameStart;
@@ -34,7 +31,6 @@ class MultiFrameAnnotation {
         this.notes = notes;
     }
 }
-// Tag definitions
 const tagCategories = {
     pedestrian: [
         'Trip', 'Along lane', 'Brisk-walk', 'Group-walk', 'Group-disperse', 'Dog-walk', 'Retreat', 'Speed-up', 'Slow-down', 'Wander', 'Pause-start', 'Pause-start', 'Jaywalking', 'Cross-on-red', 'Swerve', 'Break', 'Hesitation', 'Phone-Usage', 'Conversation',
@@ -50,22 +46,20 @@ const tagCategories = {
         'Day', 'Night', 'Rush hour', 'Residential area', 'Commercial area'
     ]
 };
-
 let allAnnotations = [];
-
 document.addEventListener('DOMContentLoaded', () => {
-    // Add event listener for save all annotations button
+    initIndexedDB();
     const saveButton = document.getElementById('save-all-annotations');
     if (saveButton) {
         saveButton.addEventListener('click', saveAllAnnotations);
     } else {
         console.error('Save button not found');
     }
-    // Initialize the first tab (Pedestrian)
+    const downloadJsonBtn = document.getElementById('download-json-btn');
+    downloadJsonBtn.addEventListener('click', exportAnnotationsAsJSON);
     createTagCheckboxes('pedestrian-tag-container', tagCategories.pedestrian);
     setupSearchFunctionality('search-pedestrian-tag', 'pedestrian-tag-container', tagCategories.pedestrian);
 
-    // Initialize other tabs
     createTagCheckboxes('vehicle-tag-container', tagCategories.vehicle);
     setupSearchFunctionality('search-vehicle-tag', 'vehicle-tag-container', tagCategories.vehicle);
 
@@ -94,14 +88,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const activeContent = document.getElementById(`${tabName}-content`);
             activeContent.classList.add('active');
 
-            if (tabName !== 'all' && isVideoLoaded) {
+            if (tabName === 'all') {
+                document.getElementById('download-json-btn').disabled = false;
+            } else if (isVideoLoaded) {
                 createTagCheckboxes(`${tabName}-tag-container`, tagCategories[tabName]);
                 setupSearchFunctionality(`search-${tabName}-tag`, `${tabName}-tag-container`, tagCategories[tabName]);
             }
         });
     });
 
-    selectAnnotationType = document.getElementById('annotation-options')
+    const selectAnnotationType = document.getElementById('annotation-options')
     selectAnnotationType.addEventListener('click', (event) => {
         console.log("selecting annotation type")
         endFrameLabel = document.getElementById("end-frame-label")
@@ -143,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     playPauseButton.addEventListener('click', function(event) {
         console.log("Play button clicked. Disabled state:", this.disabled);
         togglePlayPause();
-        event.preventDefault(); // Prevent any default button behavior
+        event.preventDefault();
     });
 
     currentFrameSlider.addEventListener('input', (event) => {
@@ -206,7 +202,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const deleteButton = document.getElementById('delete-annotations-btn');
     deleteButton.addEventListener('click', deleteAnnotation);
 
-    // Pedestrian tag creation
     const pedestrianTags = [
         'Trip', 'Alone lane', 'Brisk-walk', 'Group-walk', 'Group-disperse',
         'Dog-walk', 'Retreat', 'Speed-up', 'Slow-down', 'Wander',
@@ -222,6 +217,8 @@ document.addEventListener('DOMContentLoaded', () => {
         );
         createPedestrianTags(filteredTags);
     });
+
+    loadAnnotationsFromDB();
 });
 
 function getCheckedTags(containerId) {
@@ -284,8 +281,23 @@ function deleteWholeAnnotation(event) {
     }
 
     allAnnotations.splice(index, 1);
-
+    deleteAnnotationFromDB(index);
     updateAllAnnotationsDisplay();
+
+    const projectName = getProjectNameFromURL();
+    const annotationData = {
+        fps: player.getVideoData().fps || 30,
+        multiFrameAnnotations: allAnnotations.filter(a => a instanceof MultiFrameAnnotation),
+        singleFrameAnnotations: allAnnotations.filter(a => a instanceof SingleFrameAnnotation)
+    };
+
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+
+    const projectIndex = projects.findIndex(p => p.projectName === projectName);
+    if (projectIndex !== -1) {
+        projects[projectIndex].data = annotationData;
+        localStorage.setItem('projects', JSON.stringify(projects));
+    }
 }
 
 let isVideoLoaded = false;
@@ -414,7 +426,6 @@ function lockVideo() {
                 playPauseButton.disabled = true;
                 console.log("Video locked for single frame. isVideoLocked:", isVideoLocked);
 
-
                 player.seekTo(targetTime, true);
                 player.pauseVideo();
 
@@ -445,7 +456,6 @@ function lockVideo() {
 
                 playPauseButton.disabled = false;
                 console.log("Video locked for multi frame. isVideoLocked:", isVideoLocked);
-
 
                 player.seekTo(startTime, true);
 
@@ -546,16 +556,34 @@ function saveAllAnnotations() {
         );
     }
 
+
+
     allAnnotations.push(annotation);
 
     try {
         updateAllAnnotationsDisplay();
+        saveAnnotationToDB(annotation);
+
+        const projectName = getProjectNameFromURL();
+        const videoUrl = document.getElementById('video-url').value;
+        const annotationData = {
+            fps: player.getVideoData().fps || 30,
+            multiFrameAnnotations: allAnnotations.filter(a => a instanceof MultiFrameAnnotation),
+            singleFrameAnnotations: allAnnotations.filter(a => a instanceof SingleFrameAnnotation)
+        };
+
+        const projects = JSON.parse(localStorage.getItem('projects')) || [];
+
+        const projectIndex = projects.findIndex(p => p.projectName === projectName);
+        if (projectIndex !== -1) {
+            projects[projectIndex].data = annotationData;
+            localStorage.setItem('projects', JSON.stringify(projects));
+        }
     } catch (error) {
         console.error('Error updating annotations display:', error);
         alert('Annotation saved, but there was an error updating the display. Please check the console for details.');
     }
 
-    // Clear selected tags
     tagDiv = document.getElementById('ped-tags');
     if (tagDiv) {
         tagDiv.innerHTML = '';
@@ -571,13 +599,51 @@ function saveAllAnnotations() {
         tagDiv.innerHTML = '';
     }
 
-    // Clear additional notes
     const additionalAnnotationsInput = document.getElementById('additional-annotations');
     if (additionalAnnotationsInput) {
         additionalAnnotationsInput.value = '';
     }
 
     alert('Annotations saved successfully!');
+}
+
+function exportAnnotationsAsJSON() {
+    const videoUrl = document.getElementById('video-url').value;
+    const fps = player.getVideoData().fps || 30;
+    const projectName = getProjectNameFromURL();
+
+    const annotationsData = {
+        name: projectName,
+        fps: fps,
+        video_path: videoUrl,
+        multiFrameAnnotations: allAnnotations.filter(a => a instanceof MultiFrameAnnotation).map(a => ({
+            frameStart: a.frameStart,
+            frameEnd: a.frameEnd,
+            pedTags: a.pedTags,
+            egoTags: a.egoTags,
+            sceneTags: a.sceneTags,
+            additionalNotes: a.notes
+        })),
+        singleFrameAnnotations: allAnnotations.filter(a => a instanceof SingleFrameAnnotation).map(a => ({
+            frame: a.frame,
+            pedTags: a.pedTags,
+            egoTags: a.egoTags,
+            sceneTags: a.sceneTags,
+            additionalNotes: a.notes
+        }))
+    };
+
+    const jsonString = JSON.stringify(annotationsData, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${projectName}_annotations.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 function setupSearchFunctionality(searchInputId, tagContainerId, allTags) {
@@ -656,6 +722,8 @@ function enableAllElements() {
 
     document.querySelectorAll('input[type="radio"]').forEach(radio => radio.disabled = false);
 
+    document.getElementById('download-json-btn').disabled = false;
+
     ['pedestrian', 'vehicle', 'environment'].forEach(tabName => {
         const container = document.getElementById(`${tabName}-tag-container`);
         if (container) {
@@ -697,4 +765,99 @@ function createAnnotation(frameStart, frameEnd, pedTags, egoTags, sceneTags) {
     } else {
         return new MultiFrameAnnotation(frameStart, frameEnd, pedTags, egoTags, sceneTags);
     }
+}
+
+function getProjectNameFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectName = urlParams.get('projectName');
+    return projectName || 'Unnamed Project';
+}
+
+document.getElementById('home-button').addEventListener('click', function() {
+    window.location.href = 'index.html';
+});
+
+function initIndexedDB() {
+    const request = indexedDB.open('AnnotationsDB', 1);
+
+    request.onerror = (event) => {
+        console.error('Database error:', event.target.errorCode);
+    };
+
+    request.onsuccess = (event) => {
+        db = event.target.result;
+        console.log('Database initialized');
+    };
+
+    request.onupgradeneeded = (event) => {
+        db = event.target.result;
+        const objectStore = db.createObjectStore('annotations', { keyPath: 'id', autoIncrement: true });
+        objectStore.createIndex('frame', 'frame', { unique: false });
+        objectStore.createIndex('frameStart', 'frameStart', { unique: false });
+        objectStore.createIndex('frameEnd', 'frameEnd', { unique: false });
+        objectStore.createIndex('pedTags', 'pedTags', { unique: false });
+        objectStore.createIndex('egoTags', 'egoTags', { unique: false });
+        objectStore.createIndex('sceneTags', 'sceneTags', { unique: false });
+        objectStore.createIndex('notes', 'notes', { unique: false });
+    };
+}
+
+function saveAnnotationToDB(annotation) {
+    const transaction = db.transaction(['annotations'], 'readwrite');
+    const objectStore = transaction.objectStore('annotations');
+    const request = objectStore.add(annotation);
+
+    request.onsuccess = () => {
+        console.log('Annotation added to the database');
+    };
+
+    request.onerror = (event) => {
+        console.error('Error adding annotation to the database:', event.target.errorCode);
+    };
+}
+
+function loadAnnotationsFromDB() {
+    const transaction = db.transaction(['annotations'], 'readonly');
+    const objectStore = transaction.objectStore('annotations');
+    const request = objectStore.getAll();
+
+    request.onsuccess = (event) => {
+        const annotations = event.target.result;
+        allAnnotations = annotations.map(ann => {
+            if (ann.frameStart !== undefined && ann.frameEnd !== undefined) {
+                return new MultiFrameAnnotation(ann.frameStart, ann.frameEnd, ann.pedTags, ann.egoTags, ann.sceneTags, ann.notes);
+            } else {
+                return new SingleFrameAnnotation(ann.frame, ann.pedTags, ann.egoTags, ann.sceneTags, ann.notes);
+            }
+        });
+        updateAllAnnotationsDisplay();
+        console.log('Annotations loaded from database');
+    };
+
+    request.onerror = (event) => {
+        console.error('Error loading annotations from the database:', event.target.errorCode);
+    };
+}
+
+function deleteAnnotationFromDB(index) {
+    const transaction = db.transaction(['annotations'], 'readwrite');
+    const objectStore = transaction.objectStore('annotations');
+    const keyRequest = objectStore.getAllKeys();
+
+    keyRequest.onsuccess = (event) => {
+        const keys = event.target.result;
+        const deleteRequest = objectStore.delete(keys[index]);
+
+        deleteRequest.onsuccess = () => {
+            console.log('Annotation deleted from the database');
+        };
+
+        deleteRequest.onerror = (event) => {
+            console.error('Error deleting annotation from the database:', event.target.errorCode);
+        };
+    };
+
+    keyRequest.onerror = (event) => {
+        console.error('Error getting keys from the database:', event.target.errorCode);
+    };
 }

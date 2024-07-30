@@ -1,115 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PedAnalyze: Pedestrian Behavior Annotator</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://www.youtube.com/iframe_api"></script>
-</head>
+<header>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link rel="stylesheet" href="home_style.css">
+    <div class="logo">
+        <a href="index.html" logo">PedAnalyze</a>
+    </div>
+    <nav>
+        <ul>
+            <li><a href="#">About</a></li>
+            <li><a href="#">Contact</a></li>
+            <li><a href="#">Help</a></li>
+        </ul>
+    </nav>
+</header>
 
 <body>
-  <div class="container">
-    <div class="left-column">
-      <div class="video-input">
-        <input type="text" id="video-url" placeholder="Enter YouTube video URL">
-        <button id="load-video">Load Video</button>
-      </div>
-      <div class="video-player" id="video-player">
-      </div>
-      <div class="video-navigation">
-        <div id="frame-count">Frame: 0</div>
-        <input type="range" id="current-frame" min="0" max="1000" value="0" disabled>
-        <div class="controls">
-          <div class="frame-jump">
-            <input type="number" id="frame-jump-input-backward" placeholder="Enter frames to jump backward" disabled>
-            <button id="frame-jump-button-backward" disabled>Jump Backward Frames</button>
-          </div>
-          <button id="previous-frame" disabled><1 sec</button>
-          <button id="play-pause" disabled>Play</button>
-          <button id="next-frame" disabled>>1 sec</button>
-          <div class="frame-jump">
-            <input type="number" id="frame-jump-input" placeholder="Enter frames to forward" disabled>
-            <button id="frame-jump-button" disabled>Jump Frames</button>
-          </div>
+    <div class="container">
+        <div class="new-project">
+            <h2>Create a new project</h2>
+            <input type="text" id="projectName" placeholder="Project name">
+            <input type="text" id="videoLink" placeholder="Youtube video link">
+            <button id="createNewProject">Create</button>
         </div>
+        <h2>Past Databases</h2>
+        <div id="pastDatabases"></div>
 
-        <div class="select-annotations">
-          <div class="annotation-options" id="annotation-options">
-            <input type="radio" id="single frame" name="select_annotations" value="single frame" checked disabled>
-            <label for="single frame">Single Frame</label><br>
-            <input type="radio" id="multi frame" name="select_annotations" value="multi frame" disabled>
-            <label for="multi frame">Multi Frame</label><br>
-          </div>
-          <div class="frame-options">
-            <div class="frame-input">
-              <label for="start-frame" id="start-frame-label">Start Frame: </label>
-              <input type="text" id="start-frame" name="frame-options" placeholder="0" disabled>
-            </div>
-            <div class="frame-input">
-              <label for="end-frame" id="end-frame-label">End Frame: </label>
-              <input type="text" id="end-frame" name="frame-options" placeholder="1000" disabled>
-            </div>
-          </div>
-          <div class="lock-video-btn-container">
-            <button id="lock-video" class="lock-video-btn" disabled>Lock Video</button>
-          </div>
-        </div>
-      </div>
-      <div class="current-annotations">
-        <div id="curr-annotations" class="display-curr-annotations">
-          <label for="ped-tags" id="ped-tags-label">Pedestrian Tags </label>
-          <div class="ped-tags" id="ped-tags"></div>
-          <label for="ego-tags" id="ego-tags-label">Vehicle Tags </label>
-          <div class="ego-tags" id="ego-tags"></div>
-          <label for="env-tags" id="env-tags-label">Environment Tags </label>
-          <div class="env-tags" id="env-tags"></div>
-        </div>
-        <div class="delete-annotations-container">
-          <button class="delete-annotations-btn" id="delete-annotations-btn" disabled>Delete</button>
-        </div>
-        <div class="additional-notes">
-          <label for="additional-annotations" id="additional-annotations-label">Additional Annotations: </label>
-          <input type='text' id="additional-annotations" disabled>
-        </div>
-      </div>
+        <body>
+            <main id="projectContainer">
+            </main>
+            <script src="home_script.js"></script>
+        </body>
     </div>
-    <div class="right-column">
-      <div class="tab-buttons">
-        <button class="tab-button active" data-tab="pedestrian" disabled>Pedestrian</button>
-        <button class="tab-button" data-tab="vehicle" disabled>Vehicle</button>
-        <button class="tab-button" data-tab="environment" disabled>Environment</button>
-        <button class="tab-button" data-tab="all" disabled>Show All Annotations</button>
-      </div>
-      <div class="tab-content">
-        <div id="pedestrian-content" class="tab-pane active">
-          <div class="search-bar">
-            <input type="text" id="search-pedestrian-tag" placeholder="Search Pedestrian Tag" disabled>
-          </div>
-          <div id="pedestrian-tag-container" class="tag-container"></div>
-        </div>
-        <div id="vehicle-content" class="tab-pane">
-          <div class="search-bar">
-            <input type="text" id="search-vehicle-tag" placeholder="Search Vehicle Tag" disabled>
-          </div>
-          <div id="vehicle-tag-container" class="tag-container"></div>
-        </div>
-        <div id="environment-content" class="tab-pane">
-          <div class="search-bar">
-            <input type="text" id="search-environment-tag" placeholder="Search Environment Tag" disabled>
-          </div>
-          <div id="environment-tag-container" class="tag-container"></div>
-        </div>
-        <div id="all-content" class="tab-pane">
-          <h3>All Annotations</h3>
-          <div id="all-annotations-container"></div>
-        </div>
-      </div>
-      <button id="save-all-annotations" class="save-annotations-btn" disabled>Save Annotations</button>
-    </div>
-  </div>
-  <script src="script.js"></script>
 </body>
 
 </html>

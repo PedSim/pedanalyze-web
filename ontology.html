@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PedAnalyze: Pedestrian Behavior Annotator</title>
+  <link rel="stylesheet" href="ontology_styles.css">
+  <script src="https://www.youtube.com/iframe_api"></script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="left-column">
+      <div class="header">
+        <div class="video-input">
+          <input type="text" id="video-url" placeholder="Enter YouTube video URL">
+          <button id="load-video">Load Video</button>
+        </div>
+      </div>
+      <div class="video-player" id="video-player">
+      </div>
+      <div class="video-navigation">
+        <div id="frame-count">Frame: 0</div>
+        <input type="range" id="current-frame" min="0" max="1000" value="0" disabled>
+        <div class="controls">
+          <div class="frame-jump">
+            <input type="number" id="frame-jump-input-backward" placeholder="Enter frames to jump backward" disabled>
+            <button id="frame-jump-button-backward" disabled>Jump Backward</button>
+          </div>
+          <button id="previous-frame" disabled>
+            <1 s</button>
+              <button id="play-pause" disabled>Play</button>
+              <button id="next-frame" disabled>>1 s</button>
+              <div class="frame-jump">
+                <input type="number" id="frame-jump-input" placeholder="Enter frames to forward" disabled>
+                <button id="frame-jump-button" disabled>Jump Forward</button>
+              </div>
+        </div>
+
+        <div class="select-annotations">
+          <div class="annotation-options" id="annotation-options">
+            <input type="radio" id="single frame" name="select_annotations" value="single frame" disabled>
+            <label for="single frame", style = "color: #2a2a2a;">Single Frame</label><br>
+            <input type="radio" id="multi frame" name="select_annotations" value="multi frame" checked disabled>
+            <label for="multi frame", style = "color: #2a2a2a;">Multi Frame</label><br>
+          </div>
+          <div class="frame-options", style = "margin: 20px">
+            <div class="frame-input">
+              <label for="start-frame" id="start-frame-label">Start Frame: </label>
+              <input type="text" id="start-frame" name="frame-options" placeholder="0" disabled>
+            </div>
+            <div class="frame-input">
+              <label for="end-frame" id="end-frame-label">End Frame: </label>
+              <input type="text" id="end-frame" name="frame-options" placeholder="1000" disabled>
+            </div>
+          </div>
+          <div class="lock-video-btn-container">
+            <button id="lock-video" class="lock-video-btn" disabled>Lock Video</button>
+          </div>
+        </div>
+      </div>
+      <div class="current-annotations">
+        <div id="curr-annotations" class="display-curr-annotations">
+          <label for="ped-tags" id="ped-tags-label">Pedestrian Tags </label>
+          <div class="ped-tags" id="ped-tags"></div>
+          <label for="ego-tags" id="ego-tags-label">Vehicle Tags </label>
+          <div class="ego-tags" id="ego-tags"></div>
+          <label for="env-tags" id="env-tags-label">Environment Tags </label>
+          <div class="env-tags" id="env-tags"></div>
+        </div>
+        <div class="delete-annotations-container">
+          <button class="delete-annotations-btn" id="delete-annotations-btn" disabled>Delete</button>
+        </div>
+        <div class="additional-notes">
+          <label for="additional-annotations" id="additional-annotations-label">Additional Annotations: </label>
+          <input type='text' id="additional-annotations" disabled>
+        </div>
+      </div>
+    </div>
+    <div class="right-column">
+      <div class="tab-buttons">
+        <button class="tab-button active" data-tab="pedestrian" disabled>Pedestrian</button>
+        <button class="tab-button" data-tab="vehicle" disabled>Vehicle</button>
+        <button class="tab-button" data-tab="environment" disabled>Environment</button>
+        <button class="tab-button" data-tab="all" disabled>Show All Annotations</button>
+      </div>
+      <div class="tab-content">
+        <div id="pedestrian-content" class="tab-pane active">
+          <div class="search-bar">
+            <input type="text" id="search-pedestrian-tag" placeholder="Search Pedestrian Tag" disabled>
+          </div>
+          <div id="pedestrian-tag-container" class="tag-container"></div>
+        </div>
+        <div id="vehicle-content" class="tab-pane">
+          <div class="search-bar">
+            <input type="text" id="search-vehicle-tag" placeholder="Search Vehicle Tag" disabled>
+          </div>
+          <div id="vehicle-tag-container" class="tag-container"></div>
+        </div>
+        <div id="environment-content" class="tab-pane">
+          <div class="search-bar">
+            <input type="text" id="search-environment-tag" placeholder="Search Environment Tag" disabled>
+          </div>
+          <div id="environment-tag-container" class="tag-container"></div>
+        </div>
+        <div id="all-content" class="tab-pane">
+          <h3>All Annotations</h3>
+          <div id="all-annotations-container"></div>
+          <button id="download-json-btn" class="save-annotations-btn" disabled>Download JSON</button>
+        </div>
+      </div>
+      <button id="save-all-annotations" class="save-annotations-btn" disabled>Save Annotations</button>
+    </div>
+  </div>
+  <script>
+    window.addEventListener('load', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const videoUrl = urlParams.get('video');
+      if (videoUrl) {
+        document.getElementById('video-url').value = videoUrl;
+        document.getElementById('load-video').click();
+      }
+    });
+  </script>
+  <script src="ontology_script.js"></script>
+</body>
+
+</html>

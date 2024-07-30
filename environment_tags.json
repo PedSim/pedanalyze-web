@@ -1,0 +1,98 @@
+{
+  "time-weather" : [
+    "day" : [
+      "day",
+      "day"
+    ]
+    "night" : [
+      "night",
+      "night"
+    ]
+    "sunny" : [
+      "sunny",
+      "sunny"
+    ]
+    "foggy" : [
+      "foggy",
+      "foggy"
+    ]
+    "cloudy" : [
+      "cloudy",
+      "cloudy"
+    ]
+    "snowy" : [
+      "snowy",
+      "snowy"
+    ]
+  ]
+  "traffic-lights" : [
+    "none" : [
+      "none",
+      "none"
+    ]
+    "green" : [
+      "green",
+      "green"
+    ]
+    "yellow" : [
+      "yellow",
+      "yellow"
+    ]
+    "blinking-yellow" : [
+      "blinking-yellow",
+      "blinking yellow"
+    ]
+    "red" : [
+      "red",
+      "red"
+    ]
+  ]
+  "road-signs" : [
+    "stop-sign" : [
+      "stop-sign",
+      "stop sign"
+    ]
+  ]
+  "locations" : [
+    "crosswalk" : [
+      "crosswalk",
+      "crosswalk"
+    ]
+    "no-crosswalk" : [
+      "no-crosswalk",
+      "no crosswalk"
+    ]
+  ]
+  "traffic" : [
+    "light" : [
+      "light",
+      "light"
+    ]
+    "moderate" : [
+      "moderate",
+      "moderate"
+    ]
+    "heavy" : [
+      "heavy",
+      "heavy"
+    ]
+    "one-way" : [
+      "one-way",
+      "one way"
+    ]
+    "two-way" : [
+      "two-way",
+      "two way"
+    ]
+  ]
+  "visibility" : [
+    "occluded-pedestrian" : [
+      "occluded-pedestrian",
+      "occluded pedestrian"
+    ]
+    "glare-on-windshield" : [
+      "glare-on-windshield",
+      "glare on windshield"
+    ]
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "behavior" : [
+    "trip" : [
+      "trip",
+      "trip"
+    ]
+    "along-lane" : [
+      "along-lane",
+      "along lane"
+    ]
+    "group-walk" : [
+      "group-walk",
+      "group walk"
+    ]
+    "group-disperse" : [
+      "group-disperse",
+      "group disperse"
+    ]
+    "dog-walk" : [
+      "dog-walk",
+      "dog walk"
+    ]
+    "retreat" : [
+      "retreat",
+      "retreat"
+    ]
+    "speed-up" : [
+      "speed-up",
+      "speed up"
+    ]
+    "slow-down" : [
+      "slow-down",
+      "slow down"
+    ]
+    "wander" : [
+      "wander",
+      "wander"
+    ]
+    "pause-start" : [
+      "pause-start",
+      "pause start"
+    ]
+    "jaywalking" : [
+      "jaywalking",
+      "jaywalking"
+    ]
+    "cross-on-red" : [
+      "cross-on-red",
+      "cross on red"
+    ]
+  ]
+  "instant-reaction" : [
+    "swerve" : [
+      "swerve",
+      "swerve"
+    ]
+    "break" : [
+      "break",
+      "break"
+    ]
+    "flinch-out" : [
+      "flinch-out",
+      "flinch out"
+    ]
+    "flinch-in" : [
+      "flinch-in",
+      "flinch in"
+    ]
+    "frozen" : [
+      "frozen",
+      "frozen"
+    ]
+  ]
+  "collision" : [
+    "collision" : [
+      "collision",
+      "collision"
+    ]
+    "near-miss" : [
+      "near-miss",
+      "near miss"
+    ]
+    "run-into-traffic" : [
+      "run-into-traffic",
+      "run into traffic"
+    ]
+    "thrown-back" : [
+      "thrown-back",
+      "thrown back"
+    ]
+  ]
+  "interaction" : [
+    "make-stop" : [
+      "make-stop",
+      "make stop"
+    ]
+    "make-go" : [
+      "make-go",
+      "make go"
+    ]
+    "aggression" : [
+      "aggression",
+      "aggression"
+    ]
+    "assault" : [
+      "assault",
+      "assault"
+    ]
+    "observing" : [
+      "observing",
+      "observing"
+    ]
+  ]
+  "mental-state" : [
+    "looking" : [
+      "looking",
+      "looking"
+    ]
+    "glancing" : [
+      "glancing",
+      "glancing"
+    ]
+    "not-looking-glancing" : [
+      "not-looking-glancing",
+      "not looking/glancing"
+    ]
+    "distracted" : [
+      "distracted",
+      "distracted"
+    ]
+    "agitated" : [
+      "agitated",
+      "agitated"
+    ]
+    "cautious" : [
+      "cautious",
+      "cautious"
+    ]
+    "indecisive" : [
+      "indecisive",
+      "indecisive"
+    ]
+  ]
+  "intention" : [
+    "cross" : [
+      "cross",
+      "cross"
+    ]
+    "not-cross" : [
+      "not-cross",
+      "not cross"
+    ]
+    "not-sure-cross" : [
+      "not-sure-cross",
+      "not sure cross"
+    ]
+  ]
+}
