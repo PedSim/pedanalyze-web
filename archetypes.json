@@ -1,0 +1,64 @@
+{
+  "archetypes": [
+    { 
+      "tag-id": "wanderer",
+      "display": "The Wanderer",
+      "synonyms": ["wanderer"]
+    },
+    {
+      "tag-id": "drunk",
+      "display": "The Drunk",
+      "synonyms": ["drunk"]
+    },
+    {
+      "tag-id": "distracted",
+      "display": "The Distracted",
+      "synonyms": ["distracted"]
+    },
+    {
+      "tag-id": "flash",
+      "display": "The Flash",
+      "synonyms": ["flash", "fast"]
+    },
+    {
+      "tag-id": "indecisive",
+      "display": "The Indecisive",
+      "synonyms": ["indecisive", "unsure"]
+    },
+    {
+      "tag-id": "blind",
+      "display": "The Blind",
+      "synonyms": ["blind"]
+    },
+    {
+      "tag-id": "flock",
+      "display": "The Flock",
+      "synonyms": ["flock", "group"]
+    },
+    {
+      "tag-id": "jaywalker",
+      "display": "The Jaywalker",
+      "synonyms": ["jaywalker"]
+    },
+    {
+      "tag-id": "elderly",
+      "display": "The Elderly",
+      "synonyms": ["elderly"]
+    },
+    {
+      "tag-id": "kid",
+      "display": "The Kid",
+      "synonyms": ["kid"]
+    },
+    {
+      "tag-id": "eventful",
+      "display": "The Eventful",
+      "synonyms": ["eventful"]
+    },
+    {
+      "tag-id": "parked-pedestrian",
+      "display": "The Parked Pedestrian",
+      "synonyms": ["parked pedestrian"]
+    }
+  ]
+}

@@ -1,98 +1,119 @@
 {
   "time-weather" : [
-    "day" : [
-      "day",
-      "day"
-    ]
-    "night" : [
-      "night",
-      "night"
-    ]
-    "sunny" : [
-      "sunny",
-      "sunny"
-    ]
-    "foggy" : [
-      "foggy",
-      "foggy"
-    ]
-    "cloudy" : [
-      "cloudy",
-      "cloudy"
-    ]
-    "snowy" : [
-      "snowy",
-      "snowy"
-    ]
-  ]
+    {
+      "tag-id": "day",
+      "display": "Day",
+      "synonyms": ["day"]
+    },
+    {
+      "tag-id": "night",
+      "display": "Night",
+      "synonyms": ["night"]
+    },
+    {
+      "tag-id": "sunny",
+      "display": "Sunny",
+      "synonyms": ["sunny"]
+    },
+    {
+      "tag-id": "foggy",
+      "display": "Foggy",
+      "synonyms": ["foggy"]
+    },
+    {
+      "tag-id": "cloudy",
+      "display": "Cloudy",
+      "synonyms": ["cloudy"]
+    },
+    {
+      "tag-id": "snowy",
+      "display": "Snowy",
+      "synonyms": ["snowy"]
+    }
+  ],
   "traffic-lights" : [
-    "none" : [
-      "none",
-      "none"
-    ]
-    "green" : [
-      "green",
-      "green"
-    ]
-    "yellow" : [
-      "yellow",
-      "yellow"
-    ]
-    "blinking-yellow" : [
-      "blinking-yellow",
-      "blinking yellow"
-    ]
-    "red" : [
-      "red",
-      "red"
-    ]
-  ]
+    {
+      "tag-id": "none",
+      "display": "None",
+      "synonyms": ["none"]
+    },
+    {
+      "tag-id": "green",
+      "display": "Green",
+      "synonyms": ["green"]
+    },
+    {
+      "tag-id": "yellow",
+      "display": "Yellow",
+      "synonyms": ["yellow"]
+    },
+    {
+      "tag-id": "blinking-yellow",
+      "display": "Blinking yellow",
+      "synonyms": ["blinking yellow"]
+    },
+    {
+      "tag-id": "red",
+      "display": "Red",
+      "synonyms": ["red"]
+    }
+  ],
   "road-signs" : [
-    "stop-sign" : [
-      "stop-sign",
-      "stop sign"
-    ]
-  ]
+    {
+      "tag-id": "stop-sign",
+      "display": "Stop sign",
+      "synonyms": ["stop sign"]
+    }
+  ],
   "locations" : [
-    "crosswalk" : [
-      "crosswalk",
-      "crosswalk"
-    ]
-    "no-crosswalk" : [
-      "no-crosswalk",
-      "no crosswalk"
-    ]
-  ]
+    {
+      "tag-id": "crosswalk",
+      "display": "Crosswalk",
+      "synonyms": ["crosswalk"]
+    },
+    {
+      "tag-id": "no-crosswalk",
+      "display": "No crosswalk",
+      "synonyms": ["no crosswalk"]
+    }
+  ],
   "traffic" : [
-    "light" : [
-      "light",
-      "light"
-    ]
-    "moderate" : [
-      "moderate",
-      "moderate"
-    ]
-    "heavy" : [
-      "heavy",
-      "heavy"
-    ]
-    "one-way" : [
-      "one-way",
-      "one way"
-    ]
-    "two-way" : [
-      "two-way",
-      "two way"
-    ]
-  ]
+    {
+      "tag-id": "light",
+      "display": "Light",
+      "synonyms": ["light"]
+    },
+    {
+      "tag-id": "moderate",
+      "display": "Moderate",
+      "synonyms": ["moderate"]
+    },
+    {
+      "tag-id": "heavy",
+      "display": "Heavy",
+      "synonyms": ["heavy"]
+    },
+    {
+      "tag-id": "one-way",
+      "display": "One way",
+      "synonyms": ["one way"]
+    },
+    {
+      "tag-id": "two-way",
+      "display": "Two way",
+      "synonyms": ["two way"]
+    }
+  ],
   "visibility" : [
-    "occluded-pedestrian" : [
-      "occluded-pedestrian",
-      "occluded pedestrian"
-    ]
-    "glare-on-windshield" : [
-      "glare-on-windshield",
-      "glare on windshield"
-    ]
+    {
+      "tag-id": "occluded-pedestrian",
+      "display": "Occluded pedestrian",
+      "synonyms": ["occluded pedestrian"]
+    },
+    {
+      "tag-id": "glare-on-windshield",
+      "display": "Glare on windshield",
+      "synonyms": ["glare on windshield"]
+    }
   ]
 }

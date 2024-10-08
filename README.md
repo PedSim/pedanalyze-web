@@ -1,25 +1,48 @@
-Please view PedAnalyze's documentation here: https://pedanalyze.readthedocs.io/
+# Hello website!
 
-Please cite our paper if you use PedAnalyze or doing relevant research:
+This is a basic HTML starter project you can build on however you like. No need to save. While you develop your site, your changes will happen ✨ immediately in the preview window. On the left you'll see the files that make up your site, including HTML, JavaScript, and CSS. You can upload assets like images or audio in `assets`. The rest is up to you and your imagination. 🦄
 
+_Last updated: 28 Feb 2023_
 
-**Breakdown: PedAnalyze's UI and Functionality**
+## What's in this project?
 
-- The TitleView serves as the project management system in PedAnalyze. TitleView contains an "Add New Project" button, which prompts the initiation window with fields to insert a YouTube video link, a project title, and the local path to where the annotations should be saved. A "Save Project" button enables the user to export previously made annotations regarding the video into a JSON-formatted file saved at the annotation path. Below these two buttons lays the project information, with the project title, annotation path, and video path (URL).
+← `README.md`: That's this file, where you can tell people what your cool website does and how you built it.
 
-- The VideoView class manages the video playback and navigation. Once a new project has been initialized in TitleView, the VideoView will be rendered automatically with the target video. The VideoView controls playback via typical play, pause, and skip (left or right) buttons along with a "Current Frame" slider that can be dragged to navigate throughout the video quickly. However, to integrate with making annotations, there is also a "Start Frame" slider, an "End Frame" slider, a "Match Frame" button, a "Replay Segment" button, and a segment progress bar.
+← `index.html`: This is the main web page for your site. The HTML defines the structure and content of the page using _elements_. You'll see references in the HTML to the JS and CSS files. Try clicking the image in the center of the page!
 
-  The "Start Frame" slider and "End Frame" slider mark the starting frame and the ending frame for an annotation respectively. If the starting frame differs from the ending frame, then a MultiFrameAnnotation will be made when an annotation is saved. Otherwise, if the starting and ending frames match, a SingleFrameAnnotation will be made. The "Match Frame" button supports an easier process of making a SingleFrameAnnotation by matching the "Start Frame" and "End Frame" sliders with the current frame being played.
+← `style.css`: CSS files add styling rules to your content. The CSS applies styles to the elements in your HTML page. The style rules also make the image move when you click it.
 
-  To clarify the annotation being made, the video only plays when the current frame is between the "Start Frame" and "End Frame" sliders. When the current frame has reached the end frame, the video pauses by default. Thus, the "Replay Segment" button helps with replaying the MultiFrameAnnotation by resetting the current frame back to the start frame. The segment progress bar shows the current frame's progress between the start frame and the end frame.
+← `script.js`: If you're feeling fancy you can add interactivity to your site with JavaScript. The code in the JavaScript file runs when the page loads, and when the visitor clicks the button you can add using the code in the TODO.
 
-- The AnnotationEditView class serves as the interface for users to edit and save their annotations. The AnnotationEditView provides three distinct sections with pre-defined tags in the form of check boxes to annotate (1) pedestrian behaviors, (2) vehicle behaviors, and (3) scene/environment conditions. An additional notes text box also allows the user to input any essential details that may not be able to be captured by our tags.
+Open each file and check out the comments (in gray) for more info.
 
-  A Radio Button facilitates an intuitive distinction between whether a SingleFrameAnnotation or MultiFrameAnnotation will be made. This Radio Button also updates a Label that displays the frame number(s) that will be annotated. Finally, a "Save Annotation" button sends off the annotation data and clears all check boxes as well as additional notes to prepare for a new annotation.
+## Try this next 🏗️
 
-- The RecordingView class is a scrolling set of cards displaying all the annotations that have already been saved for the current project. Each card is called an Annotation View Widget and shows the information represented in one individual annotation, which differs slightly between a SingleFrameAnnotation and MultiFrameAnnotation. 
+Take a look in `TODO.md` for next steps you can try out in your new site!
 
-  Both SingleFrameAnnotations and MultiFrameAnnotations include (1) a list of pedestrian behavior tags, (2) a list of vehicle behavior tags, (3) a list of scene/environment condition tags, and (4) additional notes. The only difference are the frame stamps; SingleFrameAnnotations only have one frame number while MultiFrameAnnotations hold frame start and frame end values.
+___Want a minimal version of this project to build your own website? Check out [Blank Website](https://glitch.com/edit/#!/remix/glitch-blank-website)!___
 
-  Whenever the user saves a new annotation via the AnnotationEditView, the annotation is directly appended to the scrolling list for visualization.
-](https://pedanalyze.readthedocs.io/)](https://pedanalyze.readthedocs.io/
+## Ready to share your site?
+
+Add these meta tags for SEO and social sharing between your page `<head></head>` tags, changing the values for your site:
+
+```
+<link rel="canonical" href="https://glitch-hello-website.glitch.me/" />
+<meta name="description" content="A simple website, built with Glitch. Remix it to get your own."/>
+<meta name="robots" content="index,follow" />
+<meta property="og:title" content="Hello World!" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://glitch-hello-website.glitch.me/" />
+<meta property="og:description" content="A simple website, built with Glitch. Remix it to get your own."/>
+<meta property="og:image" content="https://cdn.glitch.com/605e2a51-d45f-4d87-a285-9410ad350515%2Fhello-website-social.png?v=1616712748147"/>
+<meta name="twitter:card" content="summary" />
+```
+
+![Glitch](https://cdn.glitch.com/a9975ea6-8949-4bab-addb-8a95021dc2da%2FLogo_Color.svg?v=1602781328576)
+
+## You built this with Glitch!
+
+[Glitch](https://glitch.com) is a friendly community where millions of people come together to build web apps and websites.
+
+- Need more help? [Check out our Help Center](https://help.glitch.com/) for answers to any common questions.
+- Ready to make it official? [Become a paid Glitch member](https://glitch.com/pricing) to boost your app with private sharing, more storage and memory, domains and more.

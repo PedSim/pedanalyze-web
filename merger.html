@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Annotation Merger</title>
+    <link rel="stylesheet" href="merger_styles.css">
+    <script src="https://www.youtube.com/iframe_api"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="left-column">
+            <div class="video-player" id="video-player"></div>
+            <div class="video-navigation">
+                <div id="frame-count">Frame: 0</div>
+                <input type="range" id="current-frame" min="0" max="1000" value="0" disabled>
+            </div>
+            <div class="annotation-section">
+                <div class="json-annotations" id="json1-annotations">
+                    <h3>JSON #1 Annotations</h3>
+                    <div id="json1-annotations-container"></div>
+                </div>
+                <div class="json-annotations" id="json2-annotations">
+                    <h3>JSON #2 Annotations</h3>
+                    <div id="json2-annotations-container"></div>
+                </div>
+            </div>
+        </div>
+        <div class="right-column">
+            <div class="tab-buttons">
+                <button class="tab-button active" data-tab="pedestrian">Pedestrian</button>
+                <button class="tab-button" data-tab="vehicle">Vehicle</button>
+                <button class="tab-button" data-tab="environment">Environment</button>
+                <button class="tab-button" data-tab="all">All Annotations</button>
+            </div>
+            <div class="tab-content">
+                <div id="pedestrian-content" class="tab-pane active">
+                    <div class="search-bar">
+                        <input type="text" id="search-pedestrian-tag" placeholder="Search Pedestrian Tag">
+                    </div>
+                    <div id="pedestrian-tag-container" class="tag-container"></div>
+                </div>
+                <div id="vehicle-content" class="tab-pane">
+                    <div class="search-bar">
+                        <input type="text" id="search-vehicle-tag" placeholder="Search Vehicle Tag">
+                    </div>
+                    <div id="vehicle-tag-container" class="tag-container"></div>
+                </div>
+                <div id="environment-content" class="tab-pane">
+                    <div class="search-bar">
+                        <input type="text" id="search-environment-tag" placeholder="Search Environment Tag">
+                    </div>
+                    <div id="environment-tag-container" class="tag-container"></div>
+                </div>
+                <div id="all-content" class="tab-pane">
+                    <h3>All Annotations</h3>
+                    <div id="all-annotations-container"></div>
+                </div>
+            </div>
+            <div class="current-annotations">
+                <h3>Current Merged Annotations</h3>
+                <div id="current-merged-annotations"></div>
+            </div>
+            <button id="save-merged-annotations" class="save-annotations-btn">Save Merged Annotations</button>
+        </div>
+    </div>
+
+    <div id="json-upload-modal" class="modal">
+        <div class="modal-content">
+            <h2>Upload JSON Files</h2>
+            <div class="json-input">
+                <h3>JSON #1</h3>
+                <input type="file" id="json1-file" accept=".json">
+            </div>
+            <div class="json-input">
+                <h3>JSON #2</h3>
+                <input type="file" id="json2-file" accept=".json">
+            </div>
+            <button id="load-json-files">Load JSON Files</button>
+        </div>
+    </div>
+
+    <script src="merger_script.js"></script>
+</body>
+</html>

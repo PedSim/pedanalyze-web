@@ -1,158 +1,199 @@
 {
   "behavior" : [
-    "trip" : [
-      "trip",
-      "trip"
-    ]
-    "along-lane" : [
-      "along-lane",
-      "along lane"
-    ]
-    "group-walk" : [
-      "group-walk",
-      "group walk"
-    ]
-    "group-disperse" : [
-      "group-disperse",
-      "group disperse"
-    ]
-    "dog-walk" : [
-      "dog-walk",
-      "dog walk"
-    ]
-    "retreat" : [
-      "retreat",
-      "retreat"
-    ]
-    "speed-up" : [
-      "speed-up",
-      "speed up"
-    ]
-    "slow-down" : [
-      "slow-down",
-      "slow down"
-    ]
-    "wander" : [
-      "wander",
-      "wander"
-    ]
-    "pause-start" : [
-      "pause-start",
-      "pause start"
-    ]
-    "jaywalking" : [
-      "jaywalking",
-      "jaywalking"
-    ]
-    "cross-on-red" : [
-      "cross-on-red",
-      "cross on red"
-    ]
-  ]
+    {
+      "tag-id": "trip",
+      "display": "Trip",
+      "synonyms": ["trip", "fall", "stumble"]
+    },
+    {
+      "tag-id": "along-lane",
+      "display": "Along lane",
+      "synonyms": ["along lane"]
+    },
+    {
+      "tag-id": "group-walk",
+      "display": "Group walk",
+      "synonyms": ["group walk", "together"]
+    },
+    {
+      "tag-id": "group-disperse",
+      "display": "Group disperse",
+      "synonyms": ["group disperse", "separate"]
+    },
+    {
+      "tag-id": "dog-walk",
+      "display": "Dog walk",
+      "synonyms": ["dog walk"]
+    },
+    {
+      "tag-id": "retreat",
+      "display": "Retreat",
+      "synonyms": ["retreat", "go back"]
+    },
+    {
+      "tag-id": "speed-up",
+      "display": "Speed up",
+      "synonyms": ["speed up", "fast"]
+    },
+    {
+      "tag-id": "slow-down",
+      "display": "Slow down",
+      "synonyms": ["slow down", "halt"]
+    },
+    {
+      "tag-id": "wander",
+      "display": "Wander",
+      "synonyms": ["wander", "random"]
+    },
+    {
+      "tag-id": "pause-start",
+      "display": "Pause start",
+      "synonyms": ["pause start"]
+    },
+    {
+      "tag-id": "jaywalking",
+      "display": "Jaywalking",
+      "synonyms": ["jaywalking", "cross"]
+    },
+    {
+      "tag-id": "cross-on-red",
+      "display": "Cross on red",
+      "synonyms": ["cross on red"]
+    }
+  ],
+  
   "instant-reaction" : [
-    "swerve" : [
-      "swerve",
-      "swerve"
-    ]
-    "break" : [
-      "break",
-      "break"
-    ]
-    "flinch-out" : [
-      "flinch-out",
-      "flinch out"
-    ]
-    "flinch-in" : [
-      "flinch-in",
-      "flinch in"
-    ]
-    "frozen" : [
-      "frozen",
-      "frozen"
-    ]
-  ]
+    {
+      "tag-id": "swerve",
+      "display": "Swerve",
+      "synonyms": ["swerve"]
+    },
+    {
+      "tag-id": "break",
+      "display": "Break",
+      "synonyms": ["break"]
+    },
+    {
+      "tag-id": "flinch-out",
+      "display": "Flinch out",
+      "synonyms": ["finch out"]
+    },
+    {
+      "tag-id": "flinch-in",
+      "display": "Flinch in",
+      "synonyms": ["finch in"]
+    },
+    {
+      "tag-id": "frozen",
+      "display": "Frozen",
+      "synonyms": ["frozen", "stop", "halt"]
+    }
+  ],
+  
   "collision" : [
-    "collision" : [
-      "collision",
-      "collision"
-    ]
-    "near-miss" : [
-      "near-miss",
-      "near miss"
-    ]
-    "run-into-traffic" : [
-      "run-into-traffic",
-      "run into traffic"
-    ]
-    "thrown-back" : [
-      "thrown-back",
-      "thrown back"
-    ]
-  ]
+    {
+      "tag-id": "collision",
+      "display": "Collision",
+      "synonyms": ["collision", "crash", "accident", "hit"]
+    },
+    {
+      "tag-id": "near-miss",
+      "display": "Near miss",
+      "synonyms": ["near miss", "almost hit"]
+    },
+    {
+      "tag-id": "run-into-traffic",
+      "display": "Run into traffic",
+      "synonyms": ["run into traffic"]
+    },
+    {
+      "tag-id": "thrown-back",
+      "display": "Thrown back",
+      "synonyms": ["thrown back"]
+    }
+  ],
+
   "interaction" : [
-    "make-stop" : [
-      "make-stop",
-      "make stop"
-    ]
-    "make-go" : [
-      "make-go",
-      "make go"
-    ]
-    "aggression" : [
-      "aggression",
-      "aggression"
-    ]
-    "assault" : [
-      "assault",
-      "assault"
-    ]
-    "observing" : [
-      "observing",
-      "observing"
-    ]
-  ]
+    {
+      "tag-id": "make-stop",
+      "display": "Make stop",
+      "synonyms": ["make stop"]
+    },
+    {
+      "tag-id": "make-go",
+      "display": "Make go",
+      "synonyms": ["make go"]
+    },
+    {
+      "tag-id": "aggression",
+      "display": "Aggression",
+      "synonyms": ["aggression"]
+    },
+    {
+      "tag-id": "assault",
+      "display": "assault",
+      "synonyms": ["assault", "attack", "hit"]
+    },
+    {
+      "tag-id": "observing",
+      "display": "Observing",
+      "synonyms": ["observing"]
+    }
+  ],
+  
   "mental-state" : [
-    "looking" : [
-      "looking",
-      "looking"
-    ]
-    "glancing" : [
-      "glancing",
-      "glancing"
-    ]
-    "not-looking-glancing" : [
-      "not-looking-glancing",
-      "not looking/glancing"
-    ]
-    "distracted" : [
-      "distracted",
-      "distracted"
-    ]
-    "agitated" : [
-      "agitated",
-      "agitated"
-    ]
-    "cautious" : [
-      "cautious",
-      "cautious"
-    ]
-    "indecisive" : [
-      "indecisive",
-      "indecisive"
-    ]
-  ]
+    {
+      "tag-id": "looking",
+      "display": "Looking",
+      "synonyms": ["looking", "watching", "glancing"]
+    },
+    {
+      "tag-id": "glancing",
+      "display": "Glancing",
+      "synonyms": ["looking", "watching", "glancing"]
+    },
+    {
+      "tag-id": "not-looking-glancing",
+      "display": "Not looking/glancing",
+      "synonyms": ["not looking", "not watching", "not glancing"]
+    },
+    {
+      "tag-id": "distracted",
+      "display": "Distracted",
+      "synonyms": ["distracted"]
+    },
+    {
+      "tag-id": "agitated",
+      "display": "Agitated",
+      "synonyms": ["agitated", "nervous"]
+    },
+    {
+      "tag-id": "cautious",
+      "display": "Cautious",
+      "synonyms": ["cautious", "hesitant"]
+    },
+    {
+      "tag-id": "indecisive",
+      "display": "Indecisive",
+      "synonyms": ["indecisive", "unsure"]
+    }
+  ],
+  
   "intention" : [
-    "cross" : [
-      "cross",
-      "cross"
-    ]
-    "not-cross" : [
-      "not-cross",
-      "not cross"
-    ]
-    "not-sure-cross" : [
-      "not-sure-cross",
-      "not sure cross"
-    ]
+    {
+      "tag-id": "cross",
+      "display": "Cross",
+      "synonyms": ["cross"]
+    },
+    {
+      "tag-id": "not-cross",
+      "display": "Not cross",
+      "synonyms": ["not cross"]
+    },
+    {
+      "tag-id": "not-sure-cross",
+      "display": "Not sure cross",
+      "synonyms": ["not sure cross", "unsure cross"]
+    }
   ]
 }

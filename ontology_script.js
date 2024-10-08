@@ -4,7 +4,6 @@ let playPauseButton;
 let currentFrameSlider;
 let intervalId;
 let isVideoLocked = false;
-let db;
 class Recording {
     constructor(videoPath, fps) {
         this.videoPath = videoPath;
@@ -13,42 +12,31 @@ class Recording {
     }
 }
 class SingleFrameAnnotation {
-    constructor(frame, pedTags, egoTags, sceneTags, notes) {
+    constructor(frame, pedTags, egoTags, sceneTags, archetypeTags, notes) {
         this.frame = frame;
         this.pedTags = pedTags;
         this.egoTags = egoTags;
         this.sceneTags = sceneTags;
+        this.archetypeTags = archetypeTags;
         this.notes = notes;
     }
 }
+
 class MultiFrameAnnotation {
-    constructor(frameStart, frameEnd, pedTags, egoTags, sceneTags, notes) {
+    constructor(frameStart, frameEnd, pedTags, egoTags, sceneTags, archetypeTags, notes) {
         this.frameStart = frameStart;
         this.frameEnd = frameEnd;
         this.pedTags = pedTags;
         this.egoTags = egoTags;
         this.sceneTags = sceneTags;
+        this.archetypeTags = archetypeTags;
         this.notes = notes;
     }
 }
-const tagCategories = {
-    pedestrian: [
-        'Trip', 'Along lane', 'Brisk-walk', 'Group-walk', 'Group-disperse', 'Dog-walk', 'Retreat', 'Speed-up', 'Slow-down', 'Wander', 'Pause-start', 'Pause-start', 'Jaywalking', 'Cross-on-red', 'Swerve', 'Break', 'Hesitation', 'Phone-Usage', 'Conversation',
-    ],
-    vehicle: [
-        'Car', 'Truck', 'Bus', 'Motorcycle', 'Bicycle',
-        'Emergency vehicle', 'Taxi', 'Van', 'SUV', 'Speeding',
-        'Parking', 'U-turn', 'Lane change', 'Braking', 'Acceleration', 'Full-Stop', 'Stop-and-go', 'Vehicle-on-vehicle-collision', 'Vehicle-on-pedestrian-collision',
-    ],
-    environment: [
-        'Crosswalk', 'Traffic light', 'Stop sign', 'Intersection', 'Sidewalk',
-        'Bike lane', 'Construction', 'Weather: Sunny', 'Weather: Rainy', 'Weather: Snowy',
-        'Day', 'Night', 'Rush hour', 'Residential area', 'Commercial area'
-    ]
-};
+
 let allAnnotations = [];
+firstTimeLoaded = true;
 document.addEventListener('DOMContentLoaded', () => {
-    initIndexedDB();
     const saveButton = document.getElementById('save-all-annotations');
     if (saveButton) {
         saveButton.addEventListener('click', saveAllAnnotations);
@@ -57,14 +45,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const downloadJsonBtn = document.getElementById('download-json-btn');
     downloadJsonBtn.addEventListener('click', exportAnnotationsAsJSON);
-    createTagCheckboxes('pedestrian-tag-container', tagCategories.pedestrian);
-    setupSearchFunctionality('search-pedestrian-tag', 'pedestrian-tag-container', tagCategories.pedestrian);
 
-    createTagCheckboxes('vehicle-tag-container', tagCategories.vehicle);
-    setupSearchFunctionality('search-vehicle-tag', 'vehicle-tag-container', tagCategories.vehicle);
+    //SET UP SEARCH FUNCTIONALITY
+    // createTagCheckboxes();
 
-    createTagCheckboxes('environment-tag-container', tagCategories.environment);
-    setupSearchFunctionality('search-environment-tag', 'environment-tag-container', tagCategories.environment);
+    // createTagCheckboxes('pedestrian-tag-container', tagCategories.pedestrian);
+    // setupSearchFunctionality('search-pedestrian-tag', 'pedestrian-tag-container', tagCategories.pedestrian);
+
+    // createTagCheckboxes('vehicle-tag-container', tagCategories.vehicle);
+    // setupSearchFunctionality('search-vehicle-tag', 'vehicle-tag-container', tagCategories.vehicle);
+
+    // createTagCheckboxes('environment-tag-container', tagCategories.environment);
+    // setupSearchFunctionality('search-environment-tag', 'environment-tag-container', tagCategories.environment);
 
     const loadVideoButton = document.getElementById('load-video');
     videoPlayer = document.getElementById('video-player');
@@ -90,9 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (tabName === 'all') {
                 document.getElementById('download-json-btn').disabled = false;
-            } else if (isVideoLoaded) {
-                createTagCheckboxes(`${tabName}-tag-container`, tagCategories[tabName]);
-                setupSearchFunctionality(`search-${tabName}-tag`, `${tabName}-tag-container`, tagCategories[tabName]);
+                // } else if (isVideoLoaded && firstTimeLoaded) {
+                //     createTagCheckboxes(`${tabName}-tag-container`, tagCategories[tabName]);
+                //     createTagCheckboxes();
+                //     firstTimeLoaded = false;
+                //     SET UP SEARCH FUNCTIONALITY
+                //     setupSearchFunctionality(`search-${tabName}-tag`, `${tabName}-tag-container`, tagCategories[tabName]);
+                // 
             }
         });
     });
@@ -126,7 +122,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     events: {
                         'onReady': onPlayerReady,
                         'onStateChange': onPlayerStateChange
-                    }
+                    },
+                    playerVars: {
+                        controls: 0,
+                    },
                 });
             } else {
                 alert('Please enter a valid YouTube URL.');
@@ -201,25 +200,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const deleteButton = document.getElementById('delete-annotations-btn');
     deleteButton.addEventListener('click', deleteAnnotation);
-
-    const pedestrianTags = [
-        'Trip', 'Alone lane', 'Brisk-walk', 'Group-walk', 'Group-disperse',
-        'Dog-walk', 'Retreat', 'Speed-up', 'Slow-down', 'Wander',
-        'Pause-start', 'Jaywalking', 'Cross-on-red', 'Swerve', 'Break'
-    ];
-
-    const searchPedestrianTag = document.getElementById('search-pedestrian-tag');
-
-    searchPedestrianTag.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        const filteredTags = pedestrianTags.filter(tag =>
-            tag.toLowerCase().includes(searchTerm)
-        );
-        createPedestrianTags(filteredTags);
-    });
-
-    loadAnnotationsFromDB();
 });
+
+
+// function getCheckedTags(containerId, useTagId = false) {
+//     const container = document.getElementById(containerId);
+//     let checkedTags = [];
+
+//     for (let i = 0; i < container.childNodes.length; i++) {
+//         const checkbox = container.childNodes[i].childNodes[0];
+//         if (checkbox.checked) {
+//             if (useTagId) {
+//                 checkedTags.push(checkbox.id);
+//             } else {
+//                 checkedTags.push(checkbox.name.replace(/-/g, ' '));
+//             }
+//         }
+//     }
+
+//     return checkedTags;
+// }
 
 function getCheckedTags(containerId) {
     const container = document.getElementById(containerId);
@@ -227,7 +227,11 @@ function getCheckedTags(containerId) {
     checkedTags = [];
     checkedTags.length = container.childNodes.length;
     for (let i = 0; i < container.childNodes.length; i++) {
-        checkedTags[i] = container.childNodes[i].childNodes[1].innerText.replace(/-/g, ' ');
+        tag = [];
+        tag[0] = container.childNodes[i].childNodes[0].id;
+        tag[1] = container.childNodes[i].childNodes[0].name;
+
+        checkedTags[i] = tag;
     }
     return checkedTags;
 }
@@ -253,13 +257,30 @@ function updateAllAnnotationsDisplay() {
         } else {
             frameInfo = 'Frame: Unknown';
         }
+        pedTags = [];
+        for (let i = 0; i < annotation.pedTags.length; i++) {
+            pedTags[i] = annotation.pedTags[i][1];
+        }
+        egoTags = [];
+        for (let i = 0; i < annotation.egoTags.length; i++) {
+            egoTags[i] = annotation.egoTags[i][1];
+        }
+        sceneTags = [];
+        for (let i = 0; i < annotation.sceneTags.length; i++) {
+            sceneTags[i] = annotation.sceneTags[i][1];
+        }
+        archetypeTags = [];
+        for (let i = 0; i < annotation.archetypeTags.length; i++) {
+            archetypeTags[i] = annotation.archetypeTags[i][1];
+        }
 
         annotationElement.innerHTML = `
             <h4>Annotation ${index + 1}</h4>
             <p>${frameInfo}</p>
-            <p>Pedestrian Tags: ${annotation.pedTags ? annotation.pedTags.join(', ') : 'None'}</p>
-            <p>Vehicle Tags: ${annotation.egoTags ? annotation.egoTags.join(', ') : 'None'}</p>
-            <p>Environment Tags: ${annotation.sceneTags ? annotation.sceneTags.join(', ') : 'None'}</p>
+            <p>Pedestrian Tags: ${pedTags ? pedTags.join(', ') : 'None'}</p>
+            <p>Vehicle Tags: ${egoTags ? egoTags.join(', ') : 'None'}</p>
+            <p>Environment Tags: ${sceneTags ? sceneTags.join(', ') : 'None'}</p>
+            <p>Archetype Tags: ${archetypeTags ? archetypeTags.join(', ') : 'None'}</p>
             <p>Additional Notes: ${annotation.notes || 'None'}</p>
             <button class="delete-annotation" data-index="${index}">Delete</button>
         `;
@@ -281,91 +302,246 @@ function deleteWholeAnnotation(event) {
     }
 
     allAnnotations.splice(index, 1);
-    deleteAnnotationFromDB(index);
-    updateAllAnnotationsDisplay();
 
     const projectName = getProjectNameFromURL();
-    const annotationData = {
-        fps: player.getVideoData().fps || 30,
-        multiFrameAnnotations: allAnnotations.filter(a => a instanceof MultiFrameAnnotation),
-        singleFrameAnnotations: allAnnotations.filter(a => a instanceof SingleFrameAnnotation)
-    };
-
     const projects = JSON.parse(localStorage.getItem('projects')) || [];
-
     const projectIndex = projects.findIndex(p => p.projectName === projectName);
+
     if (projectIndex !== -1) {
-        projects[projectIndex].data = annotationData;
+        projects[projectIndex].data = {
+            fps: player.getVideoData().fps || 30,
+            multiFrameAnnotations: allAnnotations.filter(a => a instanceof MultiFrameAnnotation),
+            singleFrameAnnotations: allAnnotations.filter(a => a instanceof SingleFrameAnnotation)
+        };
         localStorage.setItem('projects', JSON.stringify(projects));
     }
+
+    updateAllAnnotationsDisplay();
 }
 
-let isVideoLoaded = false;
-function createTagCheckboxes(containerId, tags) {
-    const container = document.getElementById(containerId);
+function getPedTags() {
+    return fetch("./ped_tags.json")
+        .then((result) => {
+            if (!result.ok) {
+                throw new Error(`HTTP error! Status: ${result.status}`);
+            }
+            return result.json();
+        })
+        .catch((error) => {
+            console.error("Unable to fetch data:", error);
+            throw error;
+        });
+}
 
-    container.innerHTML = '';
-    tags.forEach(tag => {
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.disabled = !isVideoLoaded;
-        checkbox.id = `${containerId}-${tag.toLowerCase().replace(/\s+/g, '-')}`;
-        checkbox.name = tag.toLowerCase().replace(/\s+/g, '-');
-        checkbox.value = tag;
+function getVehicleTags() {
+    return fetch("./vehicle_tags.json")
+        .then((result) => {
+            if (!result.ok) {
+                throw new Error(`HTTP error! Status: ${result.status}`);
+            }
+            return result.json();
+        })
+        .catch((error) => {
+            console.error("Unable to fetch data:", error);
+            throw error;
+        });
+}
 
-        currAnnotationsContainer = document.getElementById('curr-annotations')
+function getEnvironmentTags() {
+    return fetch("./environment_tags.json")
+        .then((result) => {
+            if (!result.ok) {
+                throw new Error(`HTTP error! Status: ${result.status}`);
+            }
+            return result.json();
+        })
+        .catch((error) => {
+            console.error("Unable to fetch data:", error);
+            throw error;
+        });
+}
 
-        checkbox.addEventListener('click', () => {
-
-            if (checkbox.checked) {
-                if (tagCategories.pedestrian.includes(tag)) {
-                    tagDiv = document.getElementById('ped-tags');
-                } else if (tagCategories.vehicle.includes(tag)) {
-                    tagDiv = document.getElementById('ego-tags');
-                } else {
-                    tagDiv = document.getElementById('env-tags');
-                }
-
-                tagContainer = document.createElement('div');
-
-                tagCheckbox = document.createElement('input');
-                tagCheckbox.type = 'checkbox';
-                tagCheckbox.value = checkbox.name;
-                tagCheckbox.style.padding = '10px';
-
-                tagText = document.createElement('label');
-                tagText.innerText = checkbox.name;
-
-                tagContainer.appendChild(tagCheckbox);
-                tagContainer.appendChild(tagText);
-
-                tagExists = false;
-                if (tagDiv.childNodes.length == 0) {
-                    tagExists = false;
-                } else {
-                    tagDiv.childNodes.forEach(currContainer => {
-                        if (currContainer.childNodes[0].value == tagCheckbox.value) {
-                            tagExists = true;
-                        }
-                    });
-                }
-
-                if (!tagExists) {
-                    tagDiv.appendChild(tagContainer);
+function setupSearchFunctionality(allTags, tagDiv, containerId, searchInputId) {
+    const searchInput = document.getElementById(searchInputId);
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        filteredTags = [];
+        for (let category in allTags) {
+            if (category.toLowerCase().includes(searchTerm)) {
+                for (let tag in allTags[category]) {
+                    filteredTags[filteredTags.length] = allTags[category][tag];
                 }
             }
+            else {
+                allTags[category].forEach((tag) => {
+                    for (let tagInfo in tag) {
+                        if (tagInfo.toLowerCase() == "synonyms") {
+                            tag[tagInfo].forEach((synonym) => {
+                                if (synonym.includes(searchTerm) && !filteredTags.includes(tag)) {
+                                    filteredTags[filteredTags.length] = tag;
+                                }
+                            })
+                        }
+                    }
+                });
+            }
+        }
+
+        const tagContainer = document.getElementById(containerId);
+        tagContainer.innerHTML = '';
+        
+        console.log("filtered tags", filteredTags);
+        filteredTags.forEach((tag) => {
+            loadTagCheckboxes(tag, tagDiv, containerId);
+        })
+    });
+}
+
+
+function loadTagCheckboxes(tag, tagDivId, containerId) {
+    const tagDiv = document.getElementById(tagDivId)
+    const container = document.getElementById(containerId);
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.disabled = !isVideoLoaded;
+    checkbox.id = tag["tag-id"];
+    checkbox.name = tag["display"];
+
+    currAnnotationsContainer = document.getElementById('curr-annotations')
+
+    checkbox.addEventListener('click', () => {
+        if (checkbox.checked) {
+            tagContainer = document.createElement('div');
+
+            tagCheckbox = document.createElement('input');
+            tagCheckbox.type = 'checkbox';
+            tagCheckbox.name = tag["display"];
+            tagCheckbox.id = tag["tag-id"];
+
+            tagCheckbox.style.padding = '10px';
+
+            tagText = document.createElement('label');
+            tagText.innerText = tag["display"];
+
+            tagContainer.appendChild(tagCheckbox);
+            tagContainer.appendChild(tagText);
+
+            tagExists = false;
+            if (tagDiv.childNodes.length == 0) {
+                tagExists = false;
+            } else {
+                tagDiv.childNodes.forEach(currContainer => {
+                    if (currContainer.childNodes[0].name == tagCheckbox.name) {
+                        tagExists = true;
+                    }
+                });
+            }
+
+            if (!tagExists) {
+                tagDiv.appendChild(tagContainer);
+            }
+        }
+    });
+
+    const label = document.createElement('label');
+    label.htmlFor = tag["tag-id"];
+    label.name = tag["tag-id"];
+    label.textContent = tag["display"];
+
+    const div = document.createElement('div');
+    div.classList.add('tag-item');
+    div.appendChild(checkbox);
+    div.appendChild(label);
+    container.appendChild(div);
+}
+
+
+let isVideoLoaded = false;
+function createTagCheckboxes() {
+    getPedTags()
+        .then((data) => {
+            console.log("Fetched data:", data);
+            data.behavior.forEach(tag => {
+                loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+            });
+            data["instant-reaction"].forEach(tag => {
+                loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+            });
+            data.collision.forEach(tag => {
+                loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+            });
+            data["mental-state"].forEach(tag => {
+                loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+            });
+            data.intention.forEach(tag => {
+                loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+            });
+            setupSearchFunctionality(data, "ped-tag", 'pedestrian-tag-container', 'search-pedestrian-tag');
+        })
+        .catch((error) => {
+            console.error("Error fetching data:", error);
         });
 
-        const label = document.createElement('label');
-        label.htmlFor = checkbox.id;
-        label.textContent = tag;
+    getVehicleTags()
+        .then((data) => {
+            console.log("Fetched data:", data);
+            data.behavior.forEach(tag => {
+                loadTagCheckboxes(tag, "ego-tags", 'vehicle-tag-container');
+            });
+            data.collision.forEach(tag => {
+                loadTagCheckboxes(tag, "ego-tags", 'vehicle-tag-container');
+            });
+            data.interaction.forEach(tag => {
+                loadTagCheckboxes(tag, "ego-tags", 'vehicle-tag-container');
+            });
+            data.irregular.forEach(tag => {
+                loadTagCheckboxes(tag, "ego-tags", 'vehicle-tag-container');
+            });
+            setupSearchFunctionality(data, "ego-tag", 'vehicle-tag-container', 'search-vehicle-tag');
+        })
+        .catch((error) => {
+            console.error("Error fetching data:", error);
+        });
 
-        const div = document.createElement('div');
-        div.classList.add('tag-item');
-        div.appendChild(checkbox);
-        div.appendChild(label);
-        container.appendChild(div);
-    });
+    getEnvironmentTags()
+        .then((data) => {
+            console.log("Fetched data:", data);
+            data["time-weather"].forEach(tag => {
+                loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
+            });
+            data["traffic-lights"].forEach(tag => {
+                loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
+            });
+            data["road-signs"].forEach(tag => {
+                loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
+            });
+            data.locations.forEach(tag => {
+                loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
+            });
+            data.traffic.forEach(tag => {
+                loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
+            });
+            data.visibility.forEach(tag => {
+                loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
+            });
+            setupSearchFunctionality(data, "env-tag", 'environment-tag-container', 'search-environment-tag');
+        })
+        .catch((error) => {
+            console.error("Error fetching data:", error);
+        });
+
+    getArchetypesTags()
+        .then((data) => {
+            console.log("Fetched archetype data:", data);
+            data.archetypes.forEach(tag => {
+                loadTagCheckboxes(tag, "archetype-tags", 'archetypes-tag-container');
+            });
+            setupSearchFunctionality(data, "archetype-tags", 'archetypes-tag-container', 'search-archetypes-tag');
+        })
+        .catch((error) => {
+            console.error("Error fetching archetype data:", error);
+        });
 }
 
 function deleteAnnotation() {
@@ -388,6 +564,15 @@ function deleteAnnotation() {
     }
 
     tagDiv = document.getElementById('env-tags');
+    for (let i = 0; i < tagDiv.childNodes.length; i++) {
+        if (tagDiv.childNodes[i].childNodes[0].checked) {
+            console.log(tagDiv.childNodes[i].childNodes[1].innerText)
+            tagDiv.childNodes[i].remove();
+            i--;
+        }
+    }
+
+    tagDiv = document.getElementById('archetype-tags');
     for (let i = 0; i < tagDiv.childNodes.length; i++) {
         if (tagDiv.childNodes[i].childNodes[0].checked) {
             console.log(tagDiv.childNodes[i].childNodes[1].innerText)
@@ -517,6 +702,64 @@ function checkVideoBounds(startTime, endTime) {
     }
 }
 
+function clearCurrentAnnotations() {
+    document.getElementById('ped-tags').innerHTML = '';
+    document.getElementById('ego-tags').innerHTML = '';
+    document.getElementById('env-tags').innerHTML = '';
+    document.getElementById('archetype-tags').innerHTML = '';
+
+    document.getElementById('additional-annotations').value = '';
+
+    uncheckAllCheckboxes('pedestrian-tag-container');
+    uncheckAllCheckboxes('vehicle-tag-container');
+    uncheckAllCheckboxes('environment-tag-container');
+    uncheckAllCheckboxes('archetypes-tag-container');
+}
+
+function saveAnnotationsToLocalStorage() {
+    const projectName = getProjectNameFromURL();
+    const videoUrl = document.getElementById('video-url').value;
+    const annotationData = {
+        fps: player.getVideoData().fps || 30,
+        multiFrameAnnotations: allAnnotations.filter(a => a instanceof MultiFrameAnnotation),
+        singleFrameAnnotations: allAnnotations.filter(a => a instanceof SingleFrameAnnotation)
+    };
+
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+
+    const projectIndex = projects.findIndex(p => p.projectName === projectName);
+    if (projectIndex !== -1) {
+        projects[projectIndex].data = annotationData;
+    } else {
+        projects.push({
+            projectName: projectName,
+            videoLink: videoUrl,
+            data: annotationData
+        });
+    }
+
+    localStorage.setItem('projects', JSON.stringify(projects));
+}
+
+function loadAnnotationsFromLocalStorage() {
+    const projectName = getProjectNameFromURL();
+    const projects = JSON.parse(localStorage.getItem('projects')) || [];
+    const project = projects.find(p => p.projectName === projectName);
+
+    if (project && project.data) {
+        allAnnotations = [
+            ...project.data.multiFrameAnnotations.map(a => new MultiFrameAnnotation(
+                a.frameStart, a.frameEnd, a.pedTags, a.egoTags, a.sceneTags, a.archetypeTags, a.notes
+            )),
+            ...project.data.singleFrameAnnotations.map(a => new SingleFrameAnnotation(
+                a.frame, a.pedTags, a.egoTags, a.sceneTags, a.archetypeTags, a.notes
+            ))
+        ];
+        updateAllAnnotationsDisplay();
+    }
+}
+
+
 function saveAllAnnotations() {
     if (!isVideoLocked) {
         alert('Please lock the video before saving annotations.');
@@ -526,12 +769,12 @@ function saveAllAnnotations() {
     const annotationType = document.querySelector('input[name="select_annotations"]:checked').value;
 
     const pedestrianTags = getCheckedTags('ped-tags');
-    console.log("got pedestrian tags")
     const vehicleTags = getCheckedTags('ego-tags');
     const environmentTags = getCheckedTags('env-tags');
+    const archetypeTags = getCheckedTags('archetype-tags');
     const additionalNotes = document.getElementById('additional-annotations').value;
 
-    if (pedestrianTags.length === 0 && vehicleTags.length === 0 && environmentTags.length === 0) {
+    if (pedestrianTags.length === 0 && vehicleTags.length === 0 && environmentTags.length === 0 && archetypeTags.length === 0) {
         alert('No tags selected. Please select at least one tag to save an annotation.');
         return;
     }
@@ -543,6 +786,7 @@ function saveAllAnnotations() {
             pedestrianTags,
             vehicleTags,
             environmentTags,
+            archetypeTags,
             additionalNotes
         );
     } else {
@@ -552,59 +796,34 @@ function saveAllAnnotations() {
             pedestrianTags,
             vehicleTags,
             environmentTags,
+            archetypeTags,
             additionalNotes
         );
     }
-
-
 
     allAnnotations.push(annotation);
 
     try {
         updateAllAnnotationsDisplay();
-        saveAnnotationToDB(annotation);
+        saveAnnotationsToLocalStorage();
 
-        const projectName = getProjectNameFromURL();
-        const videoUrl = document.getElementById('video-url').value;
-        const annotationData = {
-            fps: player.getVideoData().fps || 30,
-            multiFrameAnnotations: allAnnotations.filter(a => a instanceof MultiFrameAnnotation),
-            singleFrameAnnotations: allAnnotations.filter(a => a instanceof SingleFrameAnnotation)
-        };
+        clearCurrentAnnotations();
 
-        const projects = JSON.parse(localStorage.getItem('projects')) || [];
-
-        const projectIndex = projects.findIndex(p => p.projectName === projectName);
-        if (projectIndex !== -1) {
-            projects[projectIndex].data = annotationData;
-            localStorage.setItem('projects', JSON.stringify(projects));
-        }
+        alert('Annotations saved successfully!');
     } catch (error) {
         console.error('Error updating annotations display:', error);
         alert('Annotation saved, but there was an error updating the display. Please check the console for details.');
     }
+}
 
-    tagDiv = document.getElementById('ped-tags');
-    if (tagDiv) {
-        tagDiv.innerHTML = '';
+function uncheckAllCheckboxes(containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
     }
-
-    tagDiv = document.getElementById('ego-tags');
-    if (tagDiv) {
-        tagDiv.innerHTML = '';
-    }
-
-    tagDiv = document.getElementById('env-tags');
-    if (tagDiv) {
-        tagDiv.innerHTML = '';
-    }
-
-    const additionalAnnotationsInput = document.getElementById('additional-annotations');
-    if (additionalAnnotationsInput) {
-        additionalAnnotationsInput.value = '';
-    }
-
-    alert('Annotations saved successfully!');
 }
 
 function exportAnnotationsAsJSON() {
@@ -619,16 +838,18 @@ function exportAnnotationsAsJSON() {
         multiFrameAnnotations: allAnnotations.filter(a => a instanceof MultiFrameAnnotation).map(a => ({
             frameStart: a.frameStart,
             frameEnd: a.frameEnd,
-            pedTags: a.pedTags,
-            egoTags: a.egoTags,
-            sceneTags: a.sceneTags,
+            pedTags: a.pedTags.map(tagArray => tagArray[0]),
+            egoTags: a.egoTags.map(tagArray => tagArray[0]),
+            sceneTags: a.sceneTags.map(tagArray => tagArray[0]),
+            archetypeTags: a.archetypeTags.map(tagArray => tagArray[0]),
             additionalNotes: a.notes
         })),
         singleFrameAnnotations: allAnnotations.filter(a => a instanceof SingleFrameAnnotation).map(a => ({
             frame: a.frame,
-            pedTags: a.pedTags,
-            egoTags: a.egoTags,
-            sceneTags: a.sceneTags,
+            pedTags: a.pedTags.map(tagArray => tagArray[0]),
+            egoTags: a.egoTags.map(tagArray => tagArray[0]),
+            sceneTags: a.sceneTags.map(tagArray => tagArray[0]),
+            archetypeTags: a.archetypeTags.map(tagArray => tagArray[0]),
             additionalNotes: a.notes
         }))
     };
@@ -644,15 +865,6 @@ function exportAnnotationsAsJSON() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-}
-
-function setupSearchFunctionality(searchInputId, tagContainerId, allTags) {
-    const searchInput = document.getElementById(searchInputId);
-    searchInput.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase();
-        const filteredTags = allTags.filter(tag => tag.toLowerCase().includes(searchTerm));
-        createTagCheckboxes(tagContainerId, filteredTags);
-    });
 }
 
 function updateCurrentFrame() {
@@ -710,8 +922,22 @@ function onPlayerReady(event) {
 
     isVideoLoaded = true;
     enableAllElements();
+    loadAnnotationsFromLocalStorage(); // Add this line
 }
 
+function getArchetypesTags() {
+    return fetch("./archetypes.json")
+        .then((result) => {
+            if (!result.ok) {
+                throw new Error(`HTTP error! Status: ${result.status}`);
+            }
+            return result.json();
+        })
+        .catch((error) => {
+            console.error("Unable to fetch data:", error);
+            throw error;
+        });
+}
 
 function enableAllElements() {
     document.querySelectorAll('button').forEach(button => button.disabled = false);
@@ -731,9 +957,36 @@ function enableAllElements() {
         }
     });
 
-    createTagCheckboxes('pedestrian-tag-container', tagCategories.pedestrian);
-    createTagCheckboxes('vehicle-tag-container', tagCategories.vehicle);
-    createTagCheckboxes('environment-tag-container', tagCategories.environment);
+    createTagCheckboxes();
+
+    // getPedTags()
+    // .then((data) => {
+    //     console.log("Fetched data:", data);
+    //     data.behavior.forEach(tag => {
+    //         loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+    //     });
+    //     data["instant-reaction"].forEach(tag => {
+    //         loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+    //     });
+    //     data.collision.forEach(tag => {
+    //         loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+    //     });
+    //     data["mental-state"].forEach(tag => {
+    //         loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+    //     });
+    //     data.intention.forEach(tag => {
+    //         loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+    //     });
+    // })
+    // .catch((error) => {
+    //     console.error("Error fetching data:", error);
+    // });
+
+    // setupSearchFunctionality(, "ped-tag", 'pedestrian-tag-container', 'search-pedestrian-tag');
+
+    // setupSearchFunctionality(, "ego-tag", 'vehicle-tag-container', 'search-vehicle-tag');
+
+    // setupSearchFunctionality(, "env-tag", 'environment-tag-container', 'search-environment-tag');
 
 }
 
@@ -776,88 +1029,3 @@ function getProjectNameFromURL() {
 document.getElementById('home-button').addEventListener('click', function() {
     window.location.href = 'index.html';
 });
-
-function initIndexedDB() {
-    const request = indexedDB.open('AnnotationsDB', 1);
-
-    request.onerror = (event) => {
-        console.error('Database error:', event.target.errorCode);
-    };
-
-    request.onsuccess = (event) => {
-        db = event.target.result;
-        console.log('Database initialized');
-    };
-
-    request.onupgradeneeded = (event) => {
-        db = event.target.result;
-        const objectStore = db.createObjectStore('annotations', { keyPath: 'id', autoIncrement: true });
-        objectStore.createIndex('frame', 'frame', { unique: false });
-        objectStore.createIndex('frameStart', 'frameStart', { unique: false });
-        objectStore.createIndex('frameEnd', 'frameEnd', { unique: false });
-        objectStore.createIndex('pedTags', 'pedTags', { unique: false });
-        objectStore.createIndex('egoTags', 'egoTags', { unique: false });
-        objectStore.createIndex('sceneTags', 'sceneTags', { unique: false });
-        objectStore.createIndex('notes', 'notes', { unique: false });
-    };
-}
-
-function saveAnnotationToDB(annotation) {
-    const transaction = db.transaction(['annotations'], 'readwrite');
-    const objectStore = transaction.objectStore('annotations');
-    const request = objectStore.add(annotation);
-
-    request.onsuccess = () => {
-        console.log('Annotation added to the database');
-    };
-
-    request.onerror = (event) => {
-        console.error('Error adding annotation to the database:', event.target.errorCode);
-    };
-}
-
-function loadAnnotationsFromDB() {
-    const transaction = db.transaction(['annotations'], 'readonly');
-    const objectStore = transaction.objectStore('annotations');
-    const request = objectStore.getAll();
-
-    request.onsuccess = (event) => {
-        const annotations = event.target.result;
-        allAnnotations = annotations.map(ann => {
-            if (ann.frameStart !== undefined && ann.frameEnd !== undefined) {
-                return new MultiFrameAnnotation(ann.frameStart, ann.frameEnd, ann.pedTags, ann.egoTags, ann.sceneTags, ann.notes);
-            } else {
-                return new SingleFrameAnnotation(ann.frame, ann.pedTags, ann.egoTags, ann.sceneTags, ann.notes);
-            }
-        });
-        updateAllAnnotationsDisplay();
-        console.log('Annotations loaded from database');
-    };
-
-    request.onerror = (event) => {
-        console.error('Error loading annotations from the database:', event.target.errorCode);
-    };
-}
-
-function deleteAnnotationFromDB(index) {
-    const transaction = db.transaction(['annotations'], 'readwrite');
-    const objectStore = transaction.objectStore('annotations');
-    const keyRequest = objectStore.getAllKeys();
-
-    keyRequest.onsuccess = (event) => {
-        const keys = event.target.result;
-        const deleteRequest = objectStore.delete(keys[index]);
-
-        deleteRequest.onsuccess = () => {
-            console.log('Annotation deleted from the database');
-        };
-
-        deleteRequest.onerror = (event) => {
-            console.error('Error deleting annotation from the database:', event.target.errorCode);
-        };
-    };
-
-    keyRequest.onerror = (event) => {
-        console.error('Error getting keys from the database:', event.target.errorCode);
-    };
-}

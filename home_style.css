@@ -35,6 +35,24 @@ body {
   border-radius: 5px;
   cursor: pointer;
 }
+
+.edit-project {
+  background-color: #add8e6;
+  align-items: center;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.edit-project button {
+  background-color: #000;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
 .logo {
   font-size: 2rem;
   color: #034692;
@@ -153,3 +171,5 @@ button:hover {
 .delete-btn:hover {
   background-color: #45a049;
 }
+
+
