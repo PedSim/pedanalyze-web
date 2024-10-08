@@ -1,0 +1,80 @@
+{
+  "behavior" : [
+    {
+      "tag-id": "aggressive-acceleration",
+      "display": "Aggressive acceleration",
+      "synonyms": ["aggressive acceleration", "faster"]
+    },
+    {
+      "tag-id": "aggressive-brake",
+      "display": "Aggressive brake",
+      "synonyms": ["aggressive brake", "slower", "halt"]
+    },
+    {
+      "tag-id": "gradual-acceleration",
+      "display": "Gradual acceleration",
+      "synonyms": ["gradual acceleration", "faster"]
+    },
+    {
+      "tag-id": "gradual-brake",
+      "display": "Gradual brake",
+      "synonyms": ["gradual brake", "slower"]
+    },
+    {
+      "tag-id": "slow-reverse",
+      "display": "Slow reverse",
+      "synonyms": ["slow reverse", "go back"]
+    },
+    {
+      "tag-id": "quick-reverse",
+      "display": "Quick reverse",
+      "synonyms": ["quick reverse", "go back"]
+    },
+    {
+      "tag-id": "lane-change",
+      "display": "Lane change",
+      "synonyms": ["lane change"]
+    },
+    {
+      "tag-id": "speeding",
+      "display": "Speeding",
+      "synonyms": ["speeding", "fast"]
+    },
+    {
+      "tag-id": "halt",
+      "display": "Halt",
+      "synonyms": ["halt"]
+    }
+  ],
+  "collision" : [
+    {
+      "tag-id": "induced-collision",
+      "display": "Induced collision",
+      "synonyms": ["induced collision", "crash", "accident", "hit"]
+    },
+    {
+      "tag-id": "run-stop",
+      "display": "Run stop",
+      "synonyms": ["run stop"]
+    },
+    {
+      "tag-id": "swerve",
+      "display": "Swerve",
+      "synonyms": ["swerve"]
+    }
+  ],
+  "interaction" : [
+    {
+      "tag-id": "make-go",
+      "display": "Make go",
+      "synonyms": ["make go"]
+    }
+  ],
+  "irregular" : [
+    {
+      "tag-id": "sidewalk",
+      "display": "Sidewalk",
+      "synonyms": ["sidewalk", "curb", "footpath"]
+    }
+  ]
+}

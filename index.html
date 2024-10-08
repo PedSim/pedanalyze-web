@@ -1,40 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<header>
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
     <link rel="stylesheet" href="home_style.css">
-    <div class="logo">
-        <a href="index.html" logo">PedAnalyze</a>
-    </div>
-    <nav>
-        <ul>
-            <li><a href="#">About</a></li>
-            <li><a href="#">Contact</a></li>
-            <li><a href="#">Help</a></li>
-        </ul>
-    </nav>
-</header>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+    <link rel="stylesheet" href="https://mui.com/static/css/mui.css" />
+    <link rel="stylesheet" href="css/style.css" />
+</head>
 
 <body>
-    <div class="container">
+    <header>
+        <div class="logo">
+          <img src="Ped_logo.png" alt="logo" width="150" height="150">  </div>
+      <div class="btn">
+    <div class="btn__indicator">
+      <div class="btn__icon-container">
+        <i class="btn__icon fa-solid"></i>
+      </div>
+    </div>
+  </div>
+        <nav>
+            <ul>
+                <button id="openMerger" onclick="window.location.href='merger.html'">Open Merger</button>
+                <li><a href="#"> </a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Contact</a></li>
+                <li><a href="#">Help</a></li>
+            </ul>
+        </nav>
+    </header>
+  
+
+  <div class="container"> </div>
         <div class="new-project">
             <h2>Create a new project</h2>
             <input type="text" id="projectName" placeholder="Project name">
             <input type="text" id="videoLink" placeholder="Youtube video link">
             <button id="createNewProject">Create</button>
-        </div>
-        <h2>Past Databases</h2>
+      </div>
+      <div class="edit-project">
+            <h2>Open Existing Project</h2>
+            <button id="load-json-file">Load JSON file</button>
+      </div>
+        <h2>Past Projects</h2>
         <div id="pastDatabases"></div>
 
-        <body>
-            <main id="projectContainer">
-            </main>
-            <script src="home_script.js"></script>
-        </body>
-    </div>
-</body>
+        <main id="projectContainer">
+        </main>
+
+        <script src="home_script.js">
+              import React from 'react';
+              import ReactDOM from 'react-dom';
+              import MyComponent from './MyComponent';
+
+              ReactDOM.render(<MyComponent />, document.getElementById('root'));
+        </script>
+      </body>
 
 </html>

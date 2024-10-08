@@ -25,7 +25,7 @@
         <input type="range" id="current-frame" min="0" max="1000" value="0" disabled>
         <div class="controls">
           <div class="frame-jump">
-            <input type="number" id="frame-jump-input-backward" placeholder="Enter frames to jump backward" disabled>
+            <input type="number" id="frame-jump-input-backward" placeholder="Frames Backward" disabled>
             <button id="frame-jump-button-backward" disabled>Jump Backward</button>
           </div>
           <button id="previous-frame" disabled>
@@ -33,7 +33,7 @@
               <button id="play-pause" disabled>Play</button>
               <button id="next-frame" disabled>>1 s</button>
               <div class="frame-jump">
-                <input type="number" id="frame-jump-input" placeholder="Enter frames to forward" disabled>
+                <input type="number" id="frame-jump-input" placeholder="Frames Forward" disabled>
                 <button id="frame-jump-button" disabled>Jump Forward</button>
               </div>
         </div>
@@ -41,11 +41,11 @@
         <div class="select-annotations">
           <div class="annotation-options" id="annotation-options">
             <input type="radio" id="single frame" name="select_annotations" value="single frame" disabled>
-            <label for="single frame", style = "color: #2a2a2a;">Single Frame</label><br>
+            <label for="single frame" , style="color: #2a2a2a;">Single Frame</label><br>
             <input type="radio" id="multi frame" name="select_annotations" value="multi frame" checked disabled>
-            <label for="multi frame", style = "color: #2a2a2a;">Multi Frame</label><br>
+            <label for="multi frame" , style="color: #2a2a2a;">Multi Frame</label><br>
           </div>
-          <div class="frame-options", style = "margin: 20px">
+          <div class="frame-options" , style="margin: 20px">
             <div class="frame-input">
               <label for="start-frame" id="start-frame-label">Start Frame: </label>
               <input type="text" id="start-frame" name="frame-options" placeholder="0" disabled>
@@ -68,6 +68,8 @@
           <div class="ego-tags" id="ego-tags"></div>
           <label for="env-tags" id="env-tags-label">Environment Tags </label>
           <div class="env-tags" id="env-tags"></div>
+          <label for="archetype-tags" id="archetype-tags-label">Archetype Tags </label>
+          <div class="archetype-tags" id="archetype-tags"></div>
         </div>
         <div class="delete-annotations-container">
           <button class="delete-annotations-btn" id="delete-annotations-btn" disabled>Delete</button>
@@ -83,6 +85,7 @@
         <button class="tab-button active" data-tab="pedestrian" disabled>Pedestrian</button>
         <button class="tab-button" data-tab="vehicle" disabled>Vehicle</button>
         <button class="tab-button" data-tab="environment" disabled>Environment</button>
+        <button class="tab-button" data-tab="archetypes" disabled>Archetypes</button>
         <button class="tab-button" data-tab="all" disabled>Show All Annotations</button>
       </div>
       <div class="tab-content">
@@ -103,6 +106,12 @@
             <input type="text" id="search-environment-tag" placeholder="Search Environment Tag" disabled>
           </div>
           <div id="environment-tag-container" class="tag-container"></div>
+        </div>
+        <div id="archetypes-content" class="tab-pane">
+          <div class="search-bar">
+            <input type="text" id="search-archetypes-tag" placeholder="Search Archetypes Tag" disabled>
+          </div>
+          <div id="archetypes-tag-container" class="tag-container"></div>
         </div>
         <div id="all-content" class="tab-pane">
           <h3>All Annotations</h3>

@@ -3,6 +3,7 @@ body {
   background-color: #f0f0f0;
   margin: 0;
   padding: 20px;
+  color: white;
 }
 
 .logo {
@@ -11,8 +12,6 @@ body {
   align-items: left;
   padding-right: 150px;
 }
-
-
 
 .container {
   display: flex;
@@ -81,7 +80,9 @@ body {
   margin-bottom: 10px;
 }
 
-.play-pause, .previous-frame, .next-frame {
+.play-pause,
+.previous-frame,
+.next-frame {
   padding: 0px 5px;
 }
 
@@ -115,13 +116,12 @@ body {
 
 
 .frame-jump-input {
-  width: 50%;
-  padding: 15px 20px;
-  margin-bottom: 20px;
-  border: none;
-  border-radius: 20px;
-  color: #ffffff;
-  cursor: pointer;
+  width: 100%;
+  padding: 5px;
+  margin-bottom: 10px;
+  background-color: #034692;
+  border: 1px solid #4c4c4c;
+  color: white;
 }
 
 .current-annotations {
@@ -251,6 +251,7 @@ input:disabled~label {
 .search-pedestrian-tag input {
   width: 100%;
   padding: 5px;
+  margin-bottom: 10px;
   background-color: #034692;
   border: 1px solid #4c4c4c;
   color: white;
@@ -269,6 +270,12 @@ input:disabled~label {
 }
 
 #environment-tag-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+#archetypes-tag-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
@@ -294,6 +301,7 @@ input:disabled~label {
 
 .ped-tags,
 .ego-tags,
+.archetype-tags,
 .env-tags {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -332,7 +340,7 @@ input:disabled~label {
   padding: 5px;
   background-color: white;
   border: 1px solid #4c4c4c;
-  color: white;
+  color: #4c4c4c;
 }
 
 .jump-frame-input input {
@@ -368,6 +376,7 @@ input:disabled~label {
   margin-bottom: 10px;
   padding: 10px;
   border-radius: 5px;
+  color: white;
 }
 
 .annotation-item h4 {
@@ -418,12 +427,14 @@ input:disabled~label {
 }
 
 .delete-annotations-btn {
+  display: flex;
   padding: 8px 40px;
   background-color: #4CAF50;
   color: white;
   border: none;
   border-radius: 4px;
   max-width: 15%;
+  justify-content: center;
 }
 
 .delete-annotations-btn:hover {
