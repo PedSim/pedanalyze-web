@@ -1,48 +1,72 @@
-# Hello website!
+# 🧠 PedAnalyze‑Web: Web-Based Pedestrian Behavior Annotation Tool
 
-This is a basic HTML starter project you can build on however you like. No need to save. While you develop your site, your changes will happen ✨ immediately in the preview window. On the left you'll see the files that make up your site, including HTML, JavaScript, and CSS. You can upload assets like images or audio in `assets`. The rest is up to you and your imagination. 🦄
+PedAnalyze-Web is an interactive, browser-based annotation platform that streamlines the process of labeling pedestrian and vehicle behavior in videos. It is designed with usability and research scalability in mind, this tool allows for efficient frame-accurate annotations, tag assignment, and structured JSON export for downstream analysis.
 
-_Last updated: 28 Feb 2023_
+> This project complements the [PedAnalyze](https://github.com/AugmentedDesignLab/ped-behavior-annotator) system, enabling researchers, traffic analysts, and AV developers to create high-quality behavior datasets for intelligent systems.
 
-## What's in this project?
+---
+## 📖 Documentation:  
+For full usage, setup, and annotation guidelines, visit:  
+👉 [https://pedanalyze.readthedocs.io/en/latest/](https://pedanalyze.readthedocs.io/en/latest/)
 
-← `README.md`: That's this file, where you can tell people what your cool website does and how you built it.
+---
 
-← `index.html`: This is the main web page for your site. The HTML defines the structure and content of the page using _elements_. You'll see references in the HTML to the JS and CSS files. Try clicking the image in the center of the page!
+## 🖼 Preview:  
+![PedAnalyze Interface](./assets/preview.png)
 
-← `style.css`: CSS files add styling rules to your content. The CSS applies styles to the elements in your HTML page. The style rules also make the image move when you click it.
 
-← `script.js`: If you're feeling fancy you can add interactivity to your site with JavaScript. The code in the JavaScript file runs when the page loads, and when the visitor clicks the button you can add using the code in the TODO.
+## 📸 Key Features
 
-Open each file and check out the comments (in gray) for more info.
+- 🎥 **Video Integration**: Load videos from local files or YouTube URLs.
+- ⏱ **Precise Frame Control**: Use a slider and timestamp input for frame-level accuracy.
+- 🏷 **Behavioral Tagging**: Add structured tags for pedestrians, vehicles, and environmental context.
+- 📓 **Custom Notes**: Add rich descriptions or scene observations.
+- 💾 **JSON Export**: Save annotations in a clean JSON format, ready for modeling or evaluation.
+- 🌐 **Web-First UI**: Built with React for smooth interaction and low-latency annotation sessions.
 
-## Try this next 🏗️
+---
 
-Take a look in `TODO.md` for next steps you can try out in your new site!
+## 🧰 Use Cases
 
-___Want a minimal version of this project to build your own website? Check out [Blank Website](https://glitch.com/edit/#!/remix/glitch-blank-website)!___
+- 🚦 Annotating pedestrian interactions in traffic surveillance footage
+- 🤖 Creating training data for behavior prediction in autonomous vehicle systems
+- 🧍 Studying human movement, attention, and trajectory in urban settings
+- 🧪 Generating fine-grained datasets for ML model evaluation and simulation environments
 
-## Ready to share your site?
+---
 
-Add these meta tags for SEO and social sharing between your page `<head></head>` tags, changing the values for your site:
+## ⚙️ Installation
 
+### Option 1: Run with Docker (Recommended)
+
+```bash
+git clone https://github.com/PedSim/pedanalyze-web.git
+cd pedanalyze-web
+docker build -t pedanalyze-web .
+docker run -p 3000:3000 pedanalyze-web
 ```
-<link rel="canonical" href="https://glitch-hello-website.glitch.me/" />
-<meta name="description" content="A simple website, built with Glitch. Remix it to get your own."/>
-<meta name="robots" content="index,follow" />
-<meta property="og:title" content="Hello World!" />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="https://glitch-hello-website.glitch.me/" />
-<meta property="og:description" content="A simple website, built with Glitch. Remix it to get your own."/>
-<meta property="og:image" content="https://cdn.glitch.com/605e2a51-d45f-4d87-a285-9410ad350515%2Fhello-website-social.png?v=1616712748147"/>
-<meta name="twitter:card" content="summary" />
+
+### Option 2: Local Development
+```bash
+git clone https://github.com/PedSim/pedanalyze-web.git
+cd pedanalyze-web
+npm install
+npm start
+```
+---
+
+## 📚 Citation
+If you use this tool for academic purposes, please cite the following
+
+```bibtex
+@inproceedings{Huang2024,
+  author    = {Huang, Taorui and Muktadir, Golam Md and Sripada, Srishti and Saravanan, Rishi and Yuan, Amelia and Whitehead, Jim},
+  title     = {PedAnalyze: A Pedestrian Behavior Annotation Tool and Ontology},
+  booktitle = {IEEE Intelligent Vehicles Symposium (IV)},
+  year      = {2024}
+}
 ```
 
-![Glitch](https://cdn.glitch.com/a9975ea6-8949-4bab-addb-8a95021dc2da%2FLogo_Color.svg?v=1602781328576)
 
-## You built this with Glitch!
 
-[Glitch](https://glitch.com) is a friendly community where millions of people come together to build web apps and websites.
 
-- Need more help? [Check out our Help Center](https://help.glitch.com/) for answers to any common questions.
-- Ready to make it official? [Become a paid Glitch member](https://glitch.com/pricing) to boost your app with private sharing, more storage and memory, domains and more.
