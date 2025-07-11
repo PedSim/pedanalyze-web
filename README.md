@@ -12,8 +12,9 @@ For full usage, setup, and annotation guidelines, visit:
 ---
 
 ## 🖼 Preview:  
-![PedAnalyze Interface](./assets/preview.png)
+![PedAnalyze Interface](image.png)
 
+---
 
 ## 📸 Key Features
 
