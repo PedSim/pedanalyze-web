@@ -1,6 +1,7 @@
 # 🧠 PedAnalyze‑Web: Web-Based Pedestrian Behavior Annotation Tool
+![License](https://img.shields.io/badge/License-MIT-green.svg)
 
-PedAnalyze-Web is an interactive, browser-based annotation platform that streamlines the process of labeling pedestrian and vehicle behavior in videos. It is designed with usability and research scalability in mind, this tool allows for efficient frame-accurate annotations, tag assignment, and structured JSON export for downstream analysis.
+**PedAnalyze-Web** is a web-based interface for the PedAnalyze tool, designed to streamline the annotation and analysis of pedestrian behavior in dash-cam videos. It is built to support autonomous vehicle research. It enables researchers, developers, and data scientists to create structured datasets with pre-defined tags for pedestrian and vehicle interactions, capturing critical scenarios like accidents or near-misses. With support for single-frame and multi-frame annotations, PedAnalyze-Web reduces redundancy and enhances temporal relationship analysis, making it a valuable tool for advancing safer autonomous driving systems.
 
 > This project complements the [PedAnalyze](https://github.com/AugmentedDesignLab/ped-behavior-annotator) system, enabling researchers, traffic analysts, and AV developers to create high-quality behavior datasets for intelligent systems.
 
@@ -8,6 +9,11 @@ PedAnalyze-Web is an interactive, browser-based annotation platform that streaml
 ## 📖 Documentation:  
 For full usage, setup, and annotation guidelines, visit:  
 👉 [https://pedanalyze.readthedocs.io/en/latest/](https://pedanalyze.readthedocs.io/en/latest/)
+
+---
+
+## 🌐 Live Web View:
+Check this project out at https://pedanalyze-web.vercel.app/
 
 ---
 
@@ -80,4 +86,10 @@ pages = {},
 title = {Pedestrian Archetypes - The Must-Have Pedestrian Models for Autonomous Vehicle Safety Testing}
 }
 ```
+---
 
+## 📬 Contact
+
+We’d love to hear from you!  
+If you have any questions, feature requests, or want to contribute, feel free to reach out via:
+- 📧 **Email**: [taoruih@gmail.com](mailto:taoruih@gmail.com)
