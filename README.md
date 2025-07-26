@@ -60,14 +60,24 @@ npm start
 If you use this tool for academic purposes, please cite the following
 
 ```bibtex
-@inproceedings{Huang2024,
-  author    = {Huang, Taorui and Muktadir, Golam Md and Sripada, Srishti and Saravanan, Rishi and Yuan, Amelia and Whitehead, Jim},
-  title     = {PedAnalyze: A Pedestrian Behavior Annotation Tool and Ontology},
-  booktitle = {IEEE Intelligent Vehicles Symposium (IV)},
-  year      = {2024}
+@inproceedings{inproceedings,
+author = {Huang, Taorui and Muktadir, Golam Md and Sripada, Srishti and Saravanan, Rishi and Yuan, Amelia and Whitehead, Jim},
+year = {2024},
+month = {03},
+pages = {},
+title = {PedAnalyze - Pedestrian Behavior Annotator and Ontology},
+doi = {10.1109/IV55156.2024.10588755}
 }
 ```
+This is our ongoing work identifying the archetypes using this tool: 
 
-
-
+```bibtex
+@inproceedings{inproceedings,
+author = {Muktadir, Golam Md and Huang, Taorui and Bansal, Ritvik and Gaidhani, Namita and Jubaer, S M and Lin, Michael and Whitehead, Jim},
+year = {2025},
+month = {03},
+pages = {},
+title = {Pedestrian Archetypes - The Must-Have Pedestrian Models for Autonomous Vehicle Safety Testing}
+}
+```
 
