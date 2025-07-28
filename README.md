@@ -24,10 +24,9 @@ Check this project out at https://pedanalyze-web.vercel.app/
 
 ## 📸 Key Features
 
-- 🎥 **Video Integration**: Load videos from local files or YouTube URLs.
-- ⏱ **Precise Frame Control**: Use a slider and timestamp input for frame-level accuracy.
+- 🎥 **Video Integration**: Load videos from YouTube URLs.
+- ⏱ **Precise Frame Control**: Use a timestamp input for frame-level accuracy.
 - 🏷 **Behavioral Tagging**: Add structured tags for pedestrians, vehicles, and environmental context.
-- 📓 **Custom Notes**: Add rich descriptions or scene observations.
 - 💾 **JSON Export**: Save annotations in a clean JSON format, ready for modeling or evaluation.
 - 🌐 **Web-First UI**: Built with React for smooth interaction and low-latency annotation sessions.
 
