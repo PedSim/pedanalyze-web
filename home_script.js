@@ -1,55 +1,3 @@
-const body = document.querySelector('body');
-const btn = document.querySelector('.btn');
-const icon = document.querySelector('.btn__icon');
-
-//to save the dark mode use the object "local storage".
-
-//function that stores the value true if the dark mode is activated or false if it's not.
-function store(value){
-  localStorage.setItem('darkmode', value);
-}
-
-//function that indicates if the "darkmode" property exists. It loads the page as we had left it.
-function load(){
-  const darkmode = localStorage.getItem('darkmode');
-
-  //if the dark mode was never activated
-  if(!darkmode){
-    store(false);
-    icon.classList.add('fa-sun');
-  } else if( darkmode == 'true'){ //if the dark mode is activated
-    body.classList.add('darkmode');
-    icon.classList.add('fa-moon');
-  } else if(darkmode == 'false'){ //if the dark mode exists but is disabled
-    icon.classList.add('fa-sun');
-  }
-}
-
-
-load();
-
-btn.addEventListener('click', () => {
-
-  body.classList.toggle('darkmode');
-  icon.classList.add('animated');
-
-  //save true or false
-  store(body.classList.contains('darkmode'));
-
-  if(body.classList.contains('darkmode')){
-    icon.classList.remove('fa-sun');
-    icon.classList.add('fa-moon');
-  }else{
-    icon.classList.remove('fa-moon');
-    icon.classList.add('fa-sun');
-  }
-
-  setTimeout( () => {
-    icon.classList.remove('animated');
-  }, 500)
-})
-
-
 /////////////////////
 
 
@@ -63,7 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   
     const loadProjectButton = document.getElementById('load-json-file');
-    loadProjectButton.addEventListener('click', loadJSONFile);
+    loadProjectButton.addEventListener('click', () => {
+        document.getElementById('json1-file').click();
+    });
   
     function loadJSONFile() {
         const jsonFileInput = document.getElementById('json1-file');
@@ -74,15 +24,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             jsonReader.onload = (e) => {
                 const jsonData = JSON.parse(e.target.result);
+                // You can add more processing here
             };
 
             jsonReader.readAsText(jsonFile);
-
-            jsonUploadModal.style.display = 'none';
         } else {
-            alert('Please select both JSON files.');
+            alert('Please select a JSON file.');
         }
     }
+
+    // Add event listener for file input change
+    document.getElementById('json1-file').addEventListener('change', loadJSONFile);
 
     let projects = JSON.parse(localStorage.getItem('projects')) || [];
 
@@ -139,10 +91,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const projects = JSON.parse(localStorage.getItem('projects')) || [];
             const project = projects.find(p => p.projectName === projectName);
             if (project && project.data) {
+                const multiFrameCount = project.data.multiFrameAnnotations ? project.data.multiFrameAnnotations.length : 0;
+                const singleFrameCount = project.data.singleFrameAnnotations ? project.data.singleFrameAnnotations.length : 0;
+                
                 const fullData = {
                     name: projectName,
                     fps: project.data.fps,
                     video_path: project.videoLink,
+                    numberOfSingleFrameAnnotations: singleFrameCount,
+                    numberOfMultiFrameAnnotations: multiFrameCount,
                     multiFrameAnnotations: project.data.multiFrameAnnotations.map(a => ({
                         frameStart: a.frameStart,
                         frameEnd: a.frameEnd,

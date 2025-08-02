@@ -95,16 +95,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const selectAnnotationType = document.getElementById('annotation-options')
     selectAnnotationType.addEventListener('click', (event) => {
-        console.log("selecting annotation type")
+    
         endFrameLabel = document.getElementById("end-frame-label")
         startFrameLabel = document.getElementById("start-frame-label")
         if (event.target.value == 'single frame') {
-            console.log("Single Frame")
+    
             endFrame.style.display = 'none';
             endFrameLabel.style.display = 'none';
             startFrameLabel.innerText = 'Frame:';
         } else if (event.target.value == 'multi frame') {
-            console.log("Multi Frame")
+    
             endFrame.style.display = 'block';
             endFrameLabel.style.display = 'block';
             endFrameLabel.innerText = 'End Frame: ';
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     playPauseButton.addEventListener('click', function(event) {
-        console.log("Play button clicked. Disabled state:", this.disabled);
+    
         togglePlayPause();
         event.preventDefault();
     });
@@ -390,7 +390,7 @@ function setupSearchFunctionality(allTags, tagDiv, containerId, searchInputId) {
         const tagContainer = document.getElementById(containerId);
         tagContainer.innerHTML = '';
         
-        console.log("filtered tags", filteredTags);
+    
         filteredTags.forEach((tag) => {
             loadTagCheckboxes(tag, tagDiv, containerId);
         })
@@ -831,11 +831,16 @@ function exportAnnotationsAsJSON() {
     const fps = player.getVideoData().fps || 30;
     const projectName = getProjectNameFromURL();
 
+    const multiFrameAnnotations = allAnnotations.filter(a => a instanceof MultiFrameAnnotation);
+    const singleFrameAnnotations = allAnnotations.filter(a => a instanceof SingleFrameAnnotation);
+
     const annotationsData = {
         name: projectName,
         fps: fps,
         video_path: videoUrl,
-        multiFrameAnnotations: allAnnotations.filter(a => a instanceof MultiFrameAnnotation).map(a => ({
+        numberOfSingleFrameAnnotations: singleFrameAnnotations.length,
+        numberOfMultiFrameAnnotations: multiFrameAnnotations.length,
+        multiFrameAnnotations: multiFrameAnnotations.map(a => ({
             frameStart: a.frameStart,
             frameEnd: a.frameEnd,
             pedTags: a.pedTags.map(tagArray => tagArray[0]),
@@ -844,7 +849,7 @@ function exportAnnotationsAsJSON() {
             archetypeTags: a.archetypeTags.map(tagArray => tagArray[0]),
             additionalNotes: a.notes
         })),
-        singleFrameAnnotations: allAnnotations.filter(a => a instanceof SingleFrameAnnotation).map(a => ({
+        singleFrameAnnotations: singleFrameAnnotations.map(a => ({
             frame: a.frame,
             pedTags: a.pedTags.map(tagArray => tagArray[0]),
             egoTags: a.egoTags.map(tagArray => tagArray[0]),
