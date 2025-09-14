@@ -63,6 +63,11 @@
       "tag-id": "stop-sign",
       "display": "Stop sign",
       "synonyms": ["stop sign"]
+    },
+    {
+      "tag-id": "crossing-sign",
+      "display": "Crossing sign",
+      "synonyms": ["crossing sign", "pedestrian crossing"]
     }
   ],
   "locations" : [
@@ -114,6 +119,16 @@
       "tag-id": "glare-on-windshield",
       "display": "Glare on windshield",
       "synonyms": ["glare on windshield"]
+    },
+    {
+      "tag-id": "foggy",
+      "display": "Foggy",
+      "synonyms": ["foggy", "poor visibility"]
+    },
+    {
+      "tag-id": "rainy",
+      "display": "Rainy",
+      "synonyms": ["rainy", "poor visibility"]
     }
   ]
 }

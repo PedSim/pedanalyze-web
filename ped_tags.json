@@ -3,7 +3,12 @@
     {
       "tag-id": "trip",
       "display": "Trip",
-      "synonyms": ["trip", "fall", "stumble"]
+      "synonyms": ["trip", "stumble"]
+    },
+    {
+      "tag-id": "fall",
+      "display": "Fall",
+      "synonyms": ["fall", "falling"]
     },
     {
       "tag-id": "along-lane",
@@ -19,6 +24,21 @@
       "tag-id": "group-disperse",
       "display": "Group disperse",
       "synonyms": ["group disperse", "separate"]
+    },
+    {
+      "tag-id": "zig-zag",
+      "display": "Zig-zag",
+      "synonyms": ["zig zag", "weaving"]
+    },
+    {
+      "tag-id": "brisk-walk",
+      "display": "Brisk-walk",
+      "synonyms": ["brisk walk", "fast walk"]
+    },
+    {
+      "tag-id": "re-group",
+      "display": "Re-group",
+      "synonyms": ["regroup", "rejoin"]
     },
     {
       "tag-id": "dog-walk",
@@ -41,24 +61,64 @@
       "synonyms": ["slow down", "halt"]
     },
     {
-      "tag-id": "wander",
-      "display": "Wander",
-      "synonyms": ["wander", "random"]
-    },
-    {
       "tag-id": "pause-start",
       "display": "Pause start",
       "synonyms": ["pause start"]
     },
     {
-      "tag-id": "jaywalking",
-      "display": "Jaywalking",
-      "synonyms": ["jaywalking", "cross"]
-    },
-    {
       "tag-id": "cross-on-red",
       "display": "Cross on red",
       "synonyms": ["cross on red"]
+    },
+    {
+      "tag-id": "cross-without-crosswalk",
+      "display": "Cross without crosswalk",
+      "synonyms": ["cross without crosswalk", "jaywalk"]
+    },
+    {
+      "tag-id": "drop-object",
+      "display": "Drop object",
+      "synonyms": ["drop object", "drop"]
+    },
+    {
+      "tag-id": "pickup-object",
+      "display": "Pickup object",
+      "synonyms": ["pickup object", "pick up", "pickup"]
+    },
+    {
+      "tag-id": "pop-out-occlusion",
+      "display": "Pop-out occlusion",
+      "synonyms": ["pop out occlusion", "emerge"]
+    },
+    {
+      "tag-id": "crawling",
+      "display": "Crawling",
+      "synonyms": ["crawling", "crawl"]
+    },
+    {
+      "tag-id": "dancing",
+      "display": "Dancing",
+      "synonyms": ["dancing", "dance"]
+    },
+    {
+      "tag-id": "crosswalk-detour",
+      "display": "Crosswalk detour",
+      "synonyms": ["crosswalk detour", "detour"]
+    },
+    {
+      "tag-id": "gesturing",
+      "display": "Gesturing",
+      "synonyms": ["gesturing", "gesture", "waving"]
+    },
+    {
+      "tag-id": "back-turned",
+      "display": "Back turned",
+      "synonyms": ["back turned", "facing away"]
+    },
+    {
+      "tag-id": "ignore-traffic",
+      "display": "Ignore traffic",
+      "synonyms": ["ignore traffic", "ignore"]
     }
   ],
   
@@ -158,11 +218,6 @@
       "synonyms": ["not looking", "not watching", "not glancing"]
     },
     {
-      "tag-id": "distracted",
-      "display": "Distracted",
-      "synonyms": ["distracted"]
-    },
-    {
       "tag-id": "agitated",
       "display": "Agitated",
       "synonyms": ["agitated", "nervous"]
@@ -173,9 +228,14 @@
       "synonyms": ["cautious", "hesitant"]
     },
     {
-      "tag-id": "indecisive",
-      "display": "Indecisive",
-      "synonyms": ["indecisive", "unsure"]
+      "tag-id": "fixated-not-at-incoming-vehicle",
+      "display": "Fixated not at incoming vehicle",
+      "synonyms": ["fixated not at incoming vehicle", "looking elsewhere"]
+    },
+    {
+      "tag-id": "preoccupied",
+      "display": "Preoccupied",
+      "synonyms": ["preoccupied", "distracted"]
     }
   ],
   

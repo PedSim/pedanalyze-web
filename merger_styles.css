@@ -49,6 +49,11 @@ body {
   width: 100%;
 }
 
+#frame-count {
+  color: black;
+  font-weight: bold;
+}
+
 .controls {
   display: flex;
   justify-content: center;

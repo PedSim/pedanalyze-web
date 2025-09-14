@@ -59,6 +59,41 @@
       "tag-id": "parked-pedestrian",
       "display": "The Parked Pedestrian",
       "synonyms": ["parked pedestrian"]
+    },
+    {
+      "tag-id": "con-artist",
+      "display": "The Con Artist",
+      "synonyms": ["con artist", "insurance scammer"]
+    },
+    {
+      "tag-id": "foreigner",
+      "display": "The Foreigner",
+      "synonyms": ["foreigner", "tourist", "visitor"]
+    },
+    {
+      "tag-id": "influencer",
+      "display": "The Influencer",
+      "synonyms": ["influencer", "content creator"]
+    },
+    {
+      "tag-id": "protester",
+      "display": "The Protester",
+      "synonyms": ["protester", "demonstrator"]
+    },
+    {
+      "tag-id": "fighter",
+      "display": "The Fighter",
+      "synonyms": ["fighter", "aggressive"]
+    },
+    {
+      "tag-id": "pseudo-pedestrian",
+      "display": "The Pseudo Pedestrian",
+      "synonyms": ["pseudo pedestrian", "skateboarder", "rollerblader"]
+    },
+    {
+      "tag-id": "street-vendor",
+      "display": "The Street Vendor",
+      "synonyms": ["street vendor", "vendor", "seller"]
     }
   ]
 }
