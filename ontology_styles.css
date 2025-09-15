@@ -74,6 +74,12 @@ body {
   margin-bottom: 10px;
 }
 
+#frame-count {
+  color: black;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
 .controls {
   display: flex;
   justify-content: center;
