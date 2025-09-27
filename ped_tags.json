@@ -195,6 +195,11 @@
       "synonyms": ["assault", "attack", "hit"]
     },
     {
+      "tag-id": "climbing-onto-carhood",
+      "display": "Climbing onto carhood",
+      "synonyms": ["climbing onto carhood", "climbing onto car", "climbing"]
+    },
+    {
       "tag-id": "observing",
       "display": "Observing",
       "synonyms": ["observing"]

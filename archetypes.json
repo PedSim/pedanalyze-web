@@ -81,11 +81,6 @@
       "synonyms": ["protester", "demonstrator"]
     },
     {
-      "tag-id": "fighter",
-      "display": "The Fighter",
-      "synonyms": ["fighter", "aggressive"]
-    },
-    {
       "tag-id": "pseudo-pedestrian",
       "display": "The Pseudo Pedestrian",
       "synonyms": ["pseudo pedestrian", "skateboarder", "rollerblader"]
