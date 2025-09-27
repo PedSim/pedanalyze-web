@@ -113,6 +113,9 @@ document.addEventListener('DOMContentLoaded', () => {
     })
 
     loadVideoButton.addEventListener('click', () => {
+        if (loadVideoButton.classList.contains('disabled-button')) {
+            return;
+        }
         const videoUrl = document.getElementById('video-url').value;
         if (videoUrl) {
             const embedUrl = getYouTubeEmbedUrl(videoUrl);
