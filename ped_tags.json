@@ -203,6 +203,11 @@
       "tag-id": "observing",
       "display": "Observing",
       "synonyms": ["observing"]
+    },
+    {
+      "tag-id": "dragged-on-ground",
+      "display": "Dragged on ground",
+      "synonyms": ["dragged on ground", "pulled on ground"]
     }
   ],
   
