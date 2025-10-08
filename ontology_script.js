@@ -469,7 +469,7 @@ function createTagCheckboxes() {
                     });
                 }
             }
-            setupSearchFunctionality(data, "ped-tag", 'pedestrian-tag-container');
+            setupSearchFunctionality(data, "ped-tag", 'pedestrian-tag-container', 'search-pedestrian-tag');
         })
         .catch((error) => {
             console.error("Error fetching Pedestrian data:", error);
@@ -523,6 +523,7 @@ function createTagCheckboxes() {
             console.error("Error fetching Archetype data:", error);
         });
 }
+
 
 function deleteAnnotation() {
     tagDiv = document.getElementById('ped-tags');
