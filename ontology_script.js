@@ -461,88 +461,146 @@ let isVideoLoaded = false;
 function createTagCheckboxes() {
     getPedTags()
         .then((data) => {
-            console.log("Fetched data:", data);
-            data.behavior.forEach(tag => {
-                loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
-            });
-            data["instant-reaction"].forEach(tag => {
-                loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
-            });
-            data.collision.forEach(tag => {
-                loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
-            });
-            data["mental-state"].forEach(tag => {
-                loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
-            });
-            data.intention.forEach(tag => {
-                loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
-            });
+            console.log("Fetched pedestrian tag data:", data);
+            for (const category in data) {
+                if (Array.isArray(data[category])) {
+                    data[category].forEach(tag => {
+                        loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+                    });
+                }
+            }
             setupSearchFunctionality(data, "ped-tag", 'pedestrian-tag-container', 'search-pedestrian-tag');
         })
-        .catch((error) => {
-            console.error("Error fetching data:", error);
-        });
+        .catch(console.error);
 
     getVehicleTags()
         .then((data) => {
-            console.log("Fetched data:", data);
-            data.behavior.forEach(tag => {
-                loadTagCheckboxes(tag, "ego-tags", 'vehicle-tag-container');
-            });
-            data.collision.forEach(tag => {
-                loadTagCheckboxes(tag, "ego-tags", 'vehicle-tag-container');
-            });
-            data.interaction.forEach(tag => {
-                loadTagCheckboxes(tag, "ego-tags", 'vehicle-tag-container');
-            });
-            data.irregular.forEach(tag => {
-                loadTagCheckboxes(tag, "ego-tags", 'vehicle-tag-container');
-            });
+            console.log("Fetched vehicle tag data:", data);
+            for (const category in data) {
+                if (Array.isArray(data[category])) {
+                    data[category].forEach(tag => {
+                        loadTagCheckboxes(tag, "ego-tags", 'vehicle-tag-container');
+                    });
+                }
+            }
             setupSearchFunctionality(data, "ego-tag", 'vehicle-tag-container', 'search-vehicle-tag');
         })
-        .catch((error) => {
-            console.error("Error fetching data:", error);
-        });
+        .catch(console.error);
 
     getEnvironmentTags()
         .then((data) => {
-            console.log("Fetched data:", data);
-            data["time-weather"].forEach(tag => {
-                loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
-            });
-            data["traffic-lights"].forEach(tag => {
-                loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
-            });
-            data["road-signs"].forEach(tag => {
-                loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
-            });
-            data.locations.forEach(tag => {
-                loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
-            });
-            data.traffic.forEach(tag => {
-                loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
-            });
-            data.visibility.forEach(tag => {
-                loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
-            });
+            console.log("Fetched environment tag data:", data);
+            for (const category in data) {
+                if (Array.isArray(data[category])) {
+                    data[category].forEach(tag => {
+                        loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
+                    });
+                }
+            }
             setupSearchFunctionality(data, "env-tag", 'environment-tag-container', 'search-environment-tag');
         })
-        .catch((error) => {
-            console.error("Error fetching data:", error);
-        });
+        .catch(console.error);
 
     getArchetypesTags()
         .then((data) => {
             console.log("Fetched archetype data:", data);
-            data.archetypes.forEach(tag => {
-                loadTagCheckboxes(tag, "archetype-tags", 'archetypes-tag-container');
-            });
+            for (const category in data) {
+                if (Array.isArray(data[category])) {
+                    data[category].forEach(tag => {
+                        loadTagCheckboxes(tag, "archetype-tags", 'archetypes-tag-container');
+                    });
+                }
+            }
             setupSearchFunctionality(data, "archetype-tags", 'archetypes-tag-container', 'search-archetypes-tag');
         })
-        .catch((error) => {
-            console.error("Error fetching archetype data:", error);
-        });
+        .catch(console.error);
 }
+
+// function createTagCheckboxes() {
+//     getPedTags()
+//         .then((data) => {
+//             console.log("Fetched data:", data);
+//             data.behavior.forEach(tag => {
+//                 loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+//             });
+//             data["instant-reaction"].forEach(tag => {
+//                 loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+//             });
+//             data.collision.forEach(tag => {
+//                 loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+//             });
+//             data["mental-state"].forEach(tag => {
+//                 loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+//             });
+//             data.intention.forEach(tag => {
+//                 loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
+//             });
+//             setupSearchFunctionality(data, "ped-tag", 'pedestrian-tag-container', 'search-pedestrian-tag');
+//         })
+//         .catch((error) => {
+//             console.error("Error fetching data:", error);
+//         });
+
+//     getVehicleTags()
+//         .then((data) => {
+//             console.log("Fetched data:", data);
+//             data.behavior.forEach(tag => {
+//                 loadTagCheckboxes(tag, "ego-tags", 'vehicle-tag-container');
+//             });
+//             data.collision.forEach(tag => {
+//                 loadTagCheckboxes(tag, "ego-tags", 'vehicle-tag-container');
+//             });
+//             data.interaction.forEach(tag => {
+//                 loadTagCheckboxes(tag, "ego-tags", 'vehicle-tag-container');
+//             });
+//             data.irregular.forEach(tag => {
+//                 loadTagCheckboxes(tag, "ego-tags", 'vehicle-tag-container');
+//             });
+//             setupSearchFunctionality(data, "ego-tag", 'vehicle-tag-container', 'search-vehicle-tag');
+//         })
+//         .catch((error) => {
+//             console.error("Error fetching data:", error);
+//         });
+
+//     getEnvironmentTags()
+//         .then((data) => {
+//             console.log("Fetched data:", data);
+//             data["time-weather"].forEach(tag => {
+//                 loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
+//             });
+//             data["traffic-lights"].forEach(tag => {
+//                 loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
+//             });
+//             data["road-signs"].forEach(tag => {
+//                 loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
+//             });
+//             data.locations.forEach(tag => {
+//                 loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
+//             });
+//             data.traffic.forEach(tag => {
+//                 loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
+//             });
+//             data.visibility.forEach(tag => {
+//                 loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
+//             });
+//             setupSearchFunctionality(data, "env-tag", 'environment-tag-container', 'search-environment-tag');
+//         })
+//         .catch((error) => {
+//             console.error("Error fetching data:", error);
+//         });
+
+//     getArchetypesTags()
+//         .then((data) => {
+//             console.log("Fetched archetype data:", data);
+//             data.archetypes.forEach(tag => {
+//                 loadTagCheckboxes(tag, "archetype-tags", 'archetypes-tag-container');
+//             });
+//             setupSearchFunctionality(data, "archetype-tags", 'archetypes-tag-container', 'search-archetypes-tag');
+//         })
+//         .catch((error) => {
+//             console.error("Error fetching archetype data:", error);
+//         });
+// }
 
 function deleteAnnotation() {
     tagDiv = document.getElementById('ped-tags');
