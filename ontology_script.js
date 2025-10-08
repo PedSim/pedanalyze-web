@@ -469,7 +469,7 @@ function createTagCheckboxes() {
                     });
                 }
             }
-            setupSearchFunctionality(data, "ped-tag", 'pedestrian-tag-container', 'search-pedestrian-tag');
+            setupSearchFunctionality(data, "ped-tag", 'pedestrian-tag-container');
         })
         .catch((error) => {
             console.error("Error fetching Pedestrian data:", error);
