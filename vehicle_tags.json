@@ -44,6 +44,11 @@
       "tag-id": "halt",
       "display": "Halt",
       "synonyms": ["halt"]
+    },
+    {
+      "tag-id": "Keep-speed",
+      "display": "Keep speed",
+      "synonyms": ["keep speed, retain speed, no change"]
     }
   ],
   "collision" : [

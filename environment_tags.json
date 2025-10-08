@@ -68,11 +68,6 @@
       "tag-id": "crossing-sign",
       "display": "Crossing sign",
       "synonyms": ["crossing sign", "pedestrian crossing"]
-    },
-    {
-      "tag-id": "parking-lot",
-      "display": "Parking lot",
-      "synonyms": ["parking lot"]
     }
   ],
   "locations" : [
@@ -85,6 +80,11 @@
       "tag-id": "no-crosswalk",
       "display": "No crosswalk",
       "synonyms": ["no crosswalk"]
+    },
+    {
+      "tag-id": "parking-lot",
+      "display": "Parking lot",
+      "synonyms": ["parking lot"]
     }
   ],
   "traffic" : [
