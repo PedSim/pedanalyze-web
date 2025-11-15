@@ -6,6 +6,11 @@
       "synonyms": ["trip", "stumble"]
     },
     {
+      "tag-id": "skid",
+      "display": "Skid",
+      "synonyms": ["slide", "skid", "sliding", "skidding"]
+    },
+    {
       "tag-id": "fall",
       "display": "Fall",
       "synonyms": ["fall", "falling"]

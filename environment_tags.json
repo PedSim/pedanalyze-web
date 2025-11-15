@@ -85,6 +85,11 @@
       "tag-id": "parking-lot",
       "display": "Parking lot",
       "synonyms": ["parking lot"]
+    },
+    {
+      "tag-id": "highway",
+      "display": "Highway",
+      "synonyms": ["highway", "freeway", "expressway"]
     }
   ],
   "traffic" : [
