@@ -73,6 +73,11 @@
       "tag-id": "make-go",
       "display": "Make go",
       "synonyms": ["make go"]
+    },
+    {
+      "tag-id": "honk",
+      "display": "Honk",
+      "synonyms": ["honk", "honked", "horn"]
     }
   ],
   "irregular" : [
