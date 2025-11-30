@@ -82,6 +82,11 @@
       "synonyms": ["no crosswalk"]
     },
     {
+      "tag-id": "intersection",
+      "display": "Intersection",
+      "synonyms": ["intersection"]
+    },
+    {
       "tag-id": "parking-lot",
       "display": "Parking lot",
       "synonyms": ["parking lot"]

@@ -31,11 +31,6 @@
       "synonyms": ["quick reverse", "go back"]
     },
     {
-      "tag-id": "lane-change",
-      "display": "Lane change",
-      "synonyms": ["lane change"]
-    },
-    {
       "tag-id": "speeding",
       "display": "Speeding",
       "synonyms": ["speeding", "fast"]
@@ -49,6 +44,21 @@
       "tag-id": "Keep-speed",
       "display": "Keep speed",
       "synonyms": ["keep speed, retain speed, no change"]
+    },
+    {
+      "tag-id": "lane-change",
+      "display": "Lane change",
+      "synonyms": ["lane change"]
+    },
+    {
+      "tag-id": "right-turn",
+      "display": "Right turn",
+      "synonyms": ["right turn"]
+    },
+    {
+      "tag-id": "left-turn",
+      "display": "Left turn",
+      "synonyms": ["left turn"]
     }
   ],
   "collision" : [
