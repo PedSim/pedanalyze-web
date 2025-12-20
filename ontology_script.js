@@ -441,6 +441,19 @@ function loadTagCheckboxes(tag, tagDivId, containerId) {
             if (!tagExists) {
                 tagDiv.appendChild(tagContainer);
             }
+            } else {
+            
+             
+             
+             for(let i=0; i < tagDiv.childNodes.length; i++) {
+                 
+                 
+                 
+                 if(tagDiv.childNodes[i].childNodes[0].id === tag["tag-id"]) {
+                     tagDiv.childNodes[i].remove();
+                     break; 
+                 }
+             }
         }
     });
 
@@ -469,7 +482,7 @@ function createTagCheckboxes() {
                     });
                 }
             }
-            setupSearchFunctionality(data, "ped-tag", 'pedestrian-tag-container', 'search-pedestrian-tag');
+            setupSearchFunctionality(data, "ped-tags", 'pedestrian-tag-container', 'search-pedestrian-tag');
         })
         .catch((error) => {
             console.error("Error fetching Pedestrian data:", error);
@@ -485,7 +498,7 @@ function createTagCheckboxes() {
                     });
                 }
             }
-            setupSearchFunctionality(data, "ego-tag", 'vehicle-tag-container', 'search-vehicle-tag');
+            setupSearchFunctionality(data, "ego-tags", 'vehicle-tag-container', 'search-vehicle-tag');
         })
         .catch((error) => {
             console.error("Error fetching Vehicle data:", error);
@@ -501,7 +514,7 @@ function createTagCheckboxes() {
                     });
                 }
             }
-            setupSearchFunctionality(data, "env-tag", 'environment-tag-container', 'search-environment-tag');
+            setupSearchFunctionality(data, "env-tags", 'environment-tag-container', 'search-environment-tag');
         })
         .catch((error) => {
             console.error("Error fetching Environment data:", error);
