@@ -2,8 +2,25 @@ let player;
 let videoPlayer;
 let playPauseButton;
 let currentFrameSlider;
+let useStartBtn;
+let useEndBtn;
+let frameCount;
 let intervalId;
 let isVideoLocked = false;
+const DEFAULT_FPS = 30;
+const PLAYER_STATES = {
+    ENDED: 0,
+    PLAYING: 1,
+    PAUSED: 2
+};
+const UPLOAD_DB_NAME = 'PedAnalyzeUploads';
+const UPLOAD_STORE_NAME = 'videos';
+let currentVideoType = 'youtube';
+let currentVideoFps = DEFAULT_FPS;
+let hasInitializedVideoFromQuery = false;
+let pendingYouTubeVideoUrl = null;
+let isYouTubeApiReady = false;
+
 class Recording {
     constructor(videoPath, fps) {
         this.videoPath = videoPath;
@@ -36,7 +53,238 @@ class MultiFrameAnnotation {
 
 let allAnnotations = [];
 firstTimeLoaded = true;
+
+function openUploadDatabase() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(UPLOAD_DB_NAME, 1);
+
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains(UPLOAD_STORE_NAME)) {
+                db.createObjectStore(UPLOAD_STORE_NAME, { keyPath: 'id' });
+            }
+        };
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+async function getUploadedVideoRecord(id) {
+    if (!id) {
+        return null;
+    }
+
+    const db = await openUploadDatabase();
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(UPLOAD_STORE_NAME, 'readonly');
+        const store = transaction.objectStore(UPLOAD_STORE_NAME);
+        const request = store.get(id);
+
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function getProjectNameFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectName = urlParams.get('projectName');
+    return projectName || 'Unnamed Project';
+}
+
+function updateAnnotationTitle() {
+    const titleElement = document.getElementById('annotation-title');
+    if (titleElement) {
+        titleElement.textContent = getProjectNameFromURL();
+    }
+}
+
+function getProjectsFromStorage() {
+    return JSON.parse(localStorage.getItem('projects')) || [];
+}
+
+function getCurrentProjectRecord() {
+    const projectName = getProjectNameFromURL();
+    const projects = getProjectsFromStorage();
+    return projects.find(p => p.projectName === projectName) || null;
+}
+
+function getStoredProjectFps() {
+    const project = getCurrentProjectRecord();
+    return project && project.data && project.data.fps ? project.data.fps : DEFAULT_FPS;
+}
+
+function getPlayerFps() {
+    if (!player || !player.getVideoData) {
+        return currentVideoFps;
+    }
+
+    const videoData = player.getVideoData() || {};
+    return videoData.fps || currentVideoFps || DEFAULT_FPS;
+}
+
+function clearVideoUpdateInterval() {
+    if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+    }
+}
+
+function onVideoReady(autoplay = true) {
+    isVideoLoaded = true;
+    enableAllElements();
+    loadAnnotationsFromLocalStorage();
+
+    if (autoplay && player && player.playVideo) {
+        const playResult = player.playVideo();
+        if (playResult && typeof playResult.catch === 'function') {
+            playResult.catch(() => {
+                playPauseButton.textContent = 'Play';
+            });
+        }
+    }
+}
+
+function createLocalVideoPlayerAdapter(videoElement) {
+    const adapter = {
+        element: videoElement,
+        getCurrentTime: () => videoElement.currentTime || 0,
+        getDuration: () => videoElement.duration || 0,
+        seekTo: (time) => {
+            const safeTime = Math.max(0, Math.min(time, videoElement.duration || time));
+            videoElement.currentTime = safeTime;
+        },
+        playVideo: () => videoElement.play(),
+        pauseVideo: () => videoElement.pause(),
+        getPlayerState: () => {
+            if (videoElement.ended) {
+                return PLAYER_STATES.ENDED;
+            }
+
+            return videoElement.paused ? PLAYER_STATES.PAUSED : PLAYER_STATES.PLAYING;
+        },
+        getVideoData: () => ({ fps: currentVideoFps })
+    };
+
+    videoElement.addEventListener('play', () => onPlayerStateChange({ data: PLAYER_STATES.PLAYING }));
+    videoElement.addEventListener('pause', () => onPlayerStateChange({ data: PLAYER_STATES.PAUSED }));
+    videoElement.addEventListener('ended', () => onPlayerStateChange({ data: PLAYER_STATES.ENDED }));
+
+    return adapter;
+}
+
+function loadYouTubeVideo(videoUrl) {
+    const embedUrl = getYouTubeEmbedUrl(videoUrl);
+
+    if (!embedUrl) {
+        alert('Please enter a valid YouTube URL.');
+        return;
+    }
+
+    if (!isYouTubeApiReady || !window.YT || !window.YT.Player) {
+        pendingYouTubeVideoUrl = videoUrl;
+        videoPlayer.innerHTML = '<div style="color: white; display: flex; align-items: center; justify-content: center; height: 100%;">Loading YouTube video...</div>';
+        return;
+    }
+
+    currentVideoType = 'youtube';
+    currentVideoFps = getStoredProjectFps();
+    pendingYouTubeVideoUrl = null;
+    videoPlayer.innerHTML = `<iframe id="youtube-player" width="100%" height="100%" src="${embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    player = new YT.Player('youtube-player', {
+        events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+        },
+        playerVars: {
+            controls: 0,
+        },
+    });
+}
+
+async function loadUploadedVideoFromProject() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const uploadedVideoId = urlParams.get('uploadedVideoId') || (getCurrentProjectRecord() || {}).uploadedVideoId;
+    const project = getCurrentProjectRecord();
+    const uploadedVideoRecord = await getUploadedVideoRecord(uploadedVideoId);
+
+    if (!uploadedVideoRecord || !uploadedVideoRecord.file) {
+        alert('The uploaded video file for this project could not be found.');
+        return;
+    }
+
+    currentVideoType = 'upload';
+    currentVideoFps = getStoredProjectFps();
+
+    const uploadedVideoUrl = URL.createObjectURL(uploadedVideoRecord.file);
+    const localVideoLabel = uploadedVideoRecord.name || (project && project.videoTitle) || 'Uploaded video';
+
+    videoPlayer.innerHTML = `<video id="local-video-player" width="100%" height="100%" preload="metadata" playsinline></video>`;
+
+    const localVideoElement = document.getElementById('local-video-player');
+    const handleLocalVideoReady = () => {
+        onVideoReady(true);
+        updateCurrentFrame();
+    };
+
+    localVideoElement.addEventListener('loadedmetadata', handleLocalVideoReady, { once: true });
+    localVideoElement.addEventListener('canplay', handleLocalVideoReady, { once: true });
+    localVideoElement.addEventListener('error', () => {
+        console.error('Failed to load uploaded video file.');
+        alert('The uploaded video could not be loaded.');
+    }, { once: true });
+
+    localVideoElement.setAttribute('aria-label', localVideoLabel);
+    localVideoElement.style.width = '100%';
+    localVideoElement.style.height = '100%';
+    localVideoElement.style.display = 'block';
+    localVideoElement.src = uploadedVideoUrl;
+    localVideoElement.load();
+    player = createLocalVideoPlayerAdapter(localVideoElement);
+
+    if (localVideoElement.readyState >= 1) {
+        handleLocalVideoReady();
+    }
+
+    document.getElementById('video-url').value = localVideoLabel;
+}
+
+async function initializeVideoFromQuery() {
+    if (hasInitializedVideoFromQuery) {
+        return;
+    }
+
+    hasInitializedVideoFromQuery = true;
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoType = urlParams.get('videoType');
+    const videoUrl = urlParams.get('video');
+
+    if (videoType === 'upload') {
+        await loadUploadedVideoFromProject();
+        return;
+    }
+
+    if (videoUrl) {
+        document.getElementById('video-url').value = videoUrl;
+        loadYouTubeVideo(videoUrl);
+    }
+}
+
+window.onYouTubeIframeAPIReady = function() {
+    isYouTubeApiReady = true;
+
+    if (pendingYouTubeVideoUrl) {
+        loadYouTubeVideo(pendingYouTubeVideoUrl);
+    }
+};
+
+if (window.YT && window.YT.Player) {
+    isYouTubeApiReady = true;
+}
 document.addEventListener('DOMContentLoaded', () => {
+    updateAnnotationTitle();
+
     const saveButton = document.getElementById('save-all-annotations');
     if (saveButton) {
         saveButton.addEventListener('click', saveAllAnnotations);
@@ -64,9 +312,33 @@ document.addEventListener('DOMContentLoaded', () => {
     previousFrameButton = document.getElementById('previous-frame');
     nextFrameButton = document.getElementById('next-frame');
     currentFrameSlider = document.getElementById('current-frame');
-    frameCount = document.getElementById('frame_count');
+    frameCount = document.getElementById('frame-count');
     startFrame = document.getElementById("start-frame");
     endFrame = document.getElementById("end-frame");
+    useStartBtn = document.getElementById("use-start-frame");
+    useEndBtn = document.getElementById("use-end-frame");
+    const startInput = document.getElementById("start-frame");
+    const endInput = document.getElementById("end-frame");
+
+    function getCurrentFrame() {
+      const text = frameCount.textContent;
+      return parseInt(text.replace("Frame:", "").trim(), 10) || 0;
+    }
+
+    if (useStartBtn) {
+      useStartBtn.addEventListener("click", () => {
+        const frame = getCurrentFrame();
+        startInput.value = frame;
+      });
+    }
+
+    if (useEndBtn) {
+      useEndBtn.addEventListener("click", () => {
+        const frame = getCurrentFrame();
+        endInput.value = frame;
+      });
+    }
+
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-pane');
 
@@ -112,24 +384,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     })
 
-    loadVideoButton.addEventListener('click', () => {
+    loadVideoButton.addEventListener('click', async () => {
         const videoUrl = document.getElementById('video-url').value;
-        if (videoUrl) {
-            const embedUrl = getYouTubeEmbedUrl(videoUrl);
-            if (embedUrl) {
-                videoPlayer.innerHTML = `<iframe id="youtube-player" width="100%" height="100%" src="${embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-                player = new YT.Player('youtube-player', {
-                    events: {
-                        'onReady': onPlayerReady,
-                        'onStateChange': onPlayerStateChange
-                    },
-                    playerVars: {
-                        controls: 0,
-                    },
-                });
-            } else {
-                alert('Please enter a valid YouTube URL.');
-            }
+        const urlParams = new URLSearchParams(window.location.search);
+
+        if (urlParams.get('videoType') === 'upload') {
+            await loadUploadedVideoFromProject();
+        } else if (videoUrl) {
+            loadYouTubeVideo(videoUrl);
         } else {
             alert('Please enter a YouTube URL.');
         }
@@ -177,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const framesToJump = parseInt(frameJumpInput.value);
         if (!isNaN(framesToJump) && player) {
             const currentTime = player.getCurrentTime();
-            const frameRate = player.getVideoData().fps || 30;
+            const frameRate = getPlayerFps();
             const newTime = currentTime + (framesToJump / frameRate);
             player.seekTo(newTime, true);
             setTimeout(updateCurrentFrame, 200)
@@ -188,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const framesToJump = parseInt(frameJumpInputBackward.value);
         if (!isNaN(framesToJump) && player) {
             const currentTime = player.getCurrentTime();
-            const frameRate = player.getVideoData().fps || 30;
+            const frameRate = getPlayerFps();
             const newTime = currentTime - (framesToJump / frameRate);
             player.seekTo(newTime, true);
             setTimeout(updateCurrentFrame, 200)
@@ -200,6 +462,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const deleteButton = document.getElementById('delete-annotations-btn');
     deleteButton.addEventListener('click', deleteAnnotation);
+
+    window.initializeVideoFromQuery = initializeVideoFromQuery;
+    initializeVideoFromQuery();
 });
 
 
@@ -221,19 +486,210 @@ document.addEventListener('DOMContentLoaded', () => {
 //     return checkedTags;
 // }
 
+let editingAnnotationIndex = null;
+
 function getCheckedTags(containerId) {
     const container = document.getElementById(containerId);
+    if (!container) return [];
 
-    checkedTags = [];
-    checkedTags.length = container.childNodes.length;
-    for (let i = 0; i < container.childNodes.length; i++) {
-        tag = [];
-        tag[0] = container.childNodes[i].childNodes[0].id;
-        tag[1] = container.childNodes[i].childNodes[0].name;
-
-        checkedTags[i] = tag;
-    }
+    const checkedTags = [];
+    const checkboxes = container.querySelectorAll('input[type="checkbox"]:checked');
+    
+    checkboxes.forEach(checkbox => {
+        checkedTags.push([checkbox.id, checkbox.name]);
+    });
+    
     return checkedTags;
+}
+
+function updateCurrentAnnotationsFromCheckboxes() {
+    updateSummaryDisplayFromTabs();
+}
+
+function updateSummaryDisplayFromTabs() {
+    const pedTagsDiv = document.getElementById('ped-tags');
+    const egoTagsDiv = document.getElementById('ego-tags');
+    const envTagsDiv = document.getElementById('env-tags');
+    const archetypeTagsDiv = document.getElementById('archetype-tags');
+
+    // Clear summary display
+    pedTagsDiv.innerHTML = '';
+    egoTagsDiv.innerHTML = '';
+    envTagsDiv.innerHTML = '';
+    archetypeTagsDiv.innerHTML = '';
+
+    // Populate from tab containers
+    const pedChecked = getCheckedTags('pedestrian-tag-container');
+    const egoChecked = getCheckedTags('vehicle-tag-container');
+    const envChecked = getCheckedTags('environment-tag-container');
+    const archeChecked = getCheckedTags('archetypes-tag-container');
+
+    pedChecked.forEach(tag => {
+        const tagContainer = document.createElement('div');
+        const tagCheckbox = document.createElement('input');
+        tagCheckbox.type = 'checkbox';
+        tagCheckbox.name = tag[1];
+        tagCheckbox.id = tag[0];
+        tagCheckbox.style.padding = '10px';
+        const tagText = document.createElement('label');
+        tagText.innerText = tag[1];
+        tagContainer.appendChild(tagCheckbox);
+        tagContainer.appendChild(tagText);
+        pedTagsDiv.appendChild(tagContainer);
+    });
+
+    egoChecked.forEach(tag => {
+        const tagContainer = document.createElement('div');
+        const tagCheckbox = document.createElement('input');
+        tagCheckbox.type = 'checkbox';
+        tagCheckbox.name = tag[1];
+        tagCheckbox.id = tag[0];
+        tagCheckbox.style.padding = '10px';
+        const tagText = document.createElement('label');
+        tagText.innerText = tag[1];
+        tagContainer.appendChild(tagCheckbox);
+        tagContainer.appendChild(tagText);
+        egoTagsDiv.appendChild(tagContainer);
+    });
+
+    envChecked.forEach(tag => {
+        const tagContainer = document.createElement('div');
+        const tagCheckbox = document.createElement('input');
+        tagCheckbox.type = 'checkbox';
+        tagCheckbox.name = tag[1];
+        tagCheckbox.id = tag[0];
+        tagCheckbox.style.padding = '10px';
+        const tagText = document.createElement('label');
+        tagText.innerText = tag[1];
+        tagContainer.appendChild(tagCheckbox);
+        tagContainer.appendChild(tagText);
+        envTagsDiv.appendChild(tagContainer);
+    });
+
+    archeChecked.forEach(tag => {
+        const tagContainer = document.createElement('div');
+        const tagCheckbox = document.createElement('input');
+        tagCheckbox.type = 'checkbox';
+        tagCheckbox.name = tag[1];
+        tagCheckbox.id = tag[0];
+        tagCheckbox.style.padding = '10px';
+        const tagText = document.createElement('label');
+        tagText.innerText = tag[1];
+        tagContainer.appendChild(tagCheckbox);
+        tagContainer.appendChild(tagText);
+        archetypeTagsDiv.appendChild(tagContainer);
+    });
+}
+
+function parseAnnotationFrameRange(annotation) {
+    if (annotation instanceof SingleFrameAnnotation) {
+        return { type: 'single', start: annotation.frame, end: annotation.frame };
+    } else if (annotation instanceof MultiFrameAnnotation) {
+        return { type: 'multi', start: annotation.frameStart, end: annotation.frameEnd };
+    }
+    return { type: 'single', start: 0, end: 0 };
+}
+
+function setAnnotationTypeControls(type) {
+    const singleRadio = document.querySelector('input[value="single frame"]');
+    const multiRadio = document.querySelector('input[value="multi frame"]');
+    const endFrameLabel = document.getElementById('end-frame-label');
+    const startFrameLabel = document.getElementById('start-frame-label');
+    const endFrameInput = document.getElementById('end-frame');
+
+    if (type === 'single') {
+        if (singleRadio) singleRadio.checked = true;
+        if (multiRadio) multiRadio.checked = false;
+        if (endFrameLabel) endFrameLabel.style.display = 'none';
+        if (endFrameInput) endFrameInput.style.display = 'none';
+        if (startFrameLabel) startFrameLabel.innerText = 'Frame:';
+    } else {
+        if (singleRadio) singleRadio.checked = false;
+        if (multiRadio) multiRadio.checked = true;
+        if (endFrameLabel) endFrameLabel.style.display = 'block';
+        if (endFrameInput) endFrameInput.style.display = 'block';
+        if (startFrameLabel) startFrameLabel.innerText = 'Start Frame:';
+    }
+}
+
+function onSavedAnnotationFrameClick(annotation) {
+    if (isVideoLocked) {
+        alert('Please unlock the current locked annotation frame before selecting a saved frame.');
+        return;
+    }
+
+    const frameRange = parseAnnotationFrameRange(annotation);
+    setAnnotationTypeControls(frameRange.type);
+
+    const startFrameInput = document.getElementById('start-frame');
+    const endFrameInput = document.getElementById('end-frame');
+    if (startFrameInput) startFrameInput.value = frameRange.start;
+    if (endFrameInput) endFrameInput.value = frameRange.type === 'single' ? frameRange.start : frameRange.end;
+
+    lockVideo();
+}
+
+function hasCurrentSelectedTags() {
+    const tagContainers = ['pedestrian-tag-container', 'vehicle-tag-container', 'environment-tag-container', 'archetypes-tag-container'];
+    return tagContainers.some(containerId => {
+        const container = document.getElementById(containerId);
+        return container && container.querySelectorAll('input[type="checkbox"]:checked').length > 0;
+    });
+}
+
+function onUnlockAndEditClick(annotation, index) {
+    const hasTags = hasCurrentSelectedTags();
+    if (hasTags) {
+        const proceed = confirm('There are currently selected annotation tags. Your selected tags will be erased. Do you want to continue?');
+        if (!proceed) {
+            return;
+        }
+    }
+
+    // Unlock if locked
+    if (isVideoLocked) {
+        lockVideo(); // unlock
+    }
+
+    clearCurrentAnnotations();
+
+    // Set editing mode
+    editingAnnotationIndex = index;
+
+    // Set frames and lock
+    const frameRange = parseAnnotationFrameRange(annotation);
+    setAnnotationTypeControls(frameRange.type);
+
+    const startFrameInput = document.getElementById('start-frame');
+    const endFrameInput = document.getElementById('end-frame');
+    if (startFrameInput) startFrameInput.value = frameRange.start;
+    if (endFrameInput) endFrameInput.value = frameRange.type === 'single' ? frameRange.start : frameRange.end;
+
+    lockVideo();
+
+    // Populate tags
+    annotation.pedTags.forEach(tag => {
+        const checkbox = document.querySelector(`#pedestrian-tag-container input[id="${tag[0]}"]`);
+        if (checkbox) checkbox.checked = true;
+    });
+    annotation.egoTags.forEach(tag => {
+        const checkbox = document.querySelector(`#vehicle-tag-container input[id="${tag[0]}"]`);
+        if (checkbox) checkbox.checked = true;
+    });
+    annotation.sceneTags.forEach(tag => {
+        const checkbox = document.querySelector(`#environment-tag-container input[id="${tag[0]}"]`);
+        if (checkbox) checkbox.checked = true;
+    });
+    annotation.archetypeTags.forEach(tag => {
+        const checkbox = document.querySelector(`#archetypes-tag-container input[id="${tag[0]}"]`);
+        if (checkbox) checkbox.checked = true;
+    });
+
+    // Set notes
+    const notesInput = document.getElementById('additional-annotations');
+    if (notesInput) notesInput.value = annotation.notes || '';
+
+    updateCurrentAnnotationsFromCheckboxes();
 }
 
 function updateAllAnnotationsDisplay() {
@@ -257,6 +713,7 @@ function updateAllAnnotationsDisplay() {
         } else {
             frameInfo = 'Frame: Unknown';
         }
+
         pedTags = [];
         for (let i = 0; i < annotation.pedTags.length; i++) {
             pedTags[i] = annotation.pedTags[i][1];
@@ -276,7 +733,10 @@ function updateAllAnnotationsDisplay() {
 
         annotationElement.innerHTML = `
             <h4>Annotation ${index + 1}</h4>
-            <p>${frameInfo}</p>
+            <div class="annotation-frame-container">
+                <p class="annotation-frame-line"></p>
+                <button class="unlock-edit-btn" data-index="${index}">Unlock and edit</button>
+            </div>
             <p>Pedestrian Tags: ${pedTags ? pedTags.join(', ') : 'None'}</p>
             <p>Vehicle Tags: ${egoTags ? egoTags.join(', ') : 'None'}</p>
             <p>Environment Tags: ${sceneTags ? sceneTags.join(', ') : 'None'}</p>
@@ -285,6 +745,16 @@ function updateAllAnnotationsDisplay() {
             <button class="delete-annotation" data-index="${index}">Delete</button>
         `;
 
+        const frameLine = annotationElement.querySelector('.annotation-frame-line');
+        if (frameLine) {
+            const frameButton = document.createElement('button');
+            frameButton.type = 'button';
+            frameButton.className = 'annotation-frame-link';
+            frameButton.textContent = frameInfo;
+            frameButton.addEventListener('click', () => onSavedAnnotationFrameClick(annotation));
+            frameLine.appendChild(frameButton);
+        }
+
         container.appendChild(annotationElement);
     });
 
@@ -292,7 +762,17 @@ function updateAllAnnotationsDisplay() {
     deleteButtons.forEach(button => {
         button.addEventListener('click', deleteWholeAnnotation);
     });
+
+    const unlockEditButtons = container.querySelectorAll('.unlock-edit-btn');
+    unlockEditButtons.forEach(button => {
+        button.addEventListener('click', (event) => {
+            const index = parseInt(event.target.getAttribute('data-index'));
+            const annotation = allAnnotations[index];
+            onUnlockAndEditClick(annotation, index);
+        });
+    });
 }
+
 
 function deleteWholeAnnotation(event) {
     const index = parseInt(event.target.getAttribute('data-index'));
@@ -309,7 +789,7 @@ function deleteWholeAnnotation(event) {
 
     if (projectIndex !== -1) {
         projects[projectIndex].data = {
-            fps: player.getVideoData().fps || 30,
+            fps: getPlayerFps(),
             multiFrameAnnotations: allAnnotations.filter(a => a instanceof MultiFrameAnnotation),
             singleFrameAnnotations: allAnnotations.filter(a => a instanceof SingleFrameAnnotation)
         };
@@ -365,42 +845,75 @@ function setupSearchFunctionality(allTags, tagDiv, containerId, searchInputId) {
     const searchInput = document.getElementById(searchInputId);
     searchInput.addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase();
-        filteredTags = [];
-        for (let category in allTags) {
-            if (category.toLowerCase().includes(searchTerm)) {
-                for (let tag in allTags[category]) {
-                    filteredTags[filteredTags.length] = allTags[category][tag];
+        let filteredTags = [];
+        
+        function collectTags(obj) {
+            for (let key in obj) {
+                if (Array.isArray(obj[key])) {
+                    obj[key].forEach((tag) => {
+                        if (tag.display && tag.display.toLowerCase().includes(searchTerm)) {
+                            filteredTags.push(tag);
+                        } else if (tag.synonyms && tag.synonyms.some(syn => syn.toLowerCase().includes(searchTerm))) {
+                            filteredTags.push(tag);
+                        }
+                    });
+                } else if (typeof obj[key] === 'object') {
+                    collectTags(obj[key]);
                 }
             }
-            else {
-                allTags[category].forEach((tag) => {
-                    for (let tagInfo in tag) {
-                        if (tagInfo.toLowerCase() == "synonyms") {
-                            tag[tagInfo].forEach((synonym) => {
-                                if (synonym.includes(searchTerm) && !filteredTags.includes(tag)) {
-                                    filteredTags[filteredTags.length] = tag;
-                                }
-                            })
-                        }
-                    }
-                });
-            }
         }
+        
+        collectTags(allTags);
 
         const tagContainer = document.getElementById(containerId);
         tagContainer.innerHTML = '';
         
-    
-        filteredTags.forEach((tag) => {
-            loadTagCheckboxes(tag, tagDiv, containerId);
-        })
+        // Rebuild the structure with headings when categories exist
+        const buildSection = (title, tags) => {
+            const section = document.createElement('div');
+            section.className = 'tag-category-section';
+
+            const heading = document.createElement('h4');
+            heading.className = 'category-heading';
+            heading.textContent = title.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            section.appendChild(heading);
+
+            const row = document.createElement('div');
+            row.className = 'category-tags-row';
+            section.appendChild(row);
+            tagContainer.appendChild(section);
+
+            tags.forEach(tag => loadTagCheckboxes(tag, tagDiv, row));
+        };
+
+        let sectionBuilt = false;
+        for (const category in allTags) {
+            if (Array.isArray(allTags[category])) {
+                const visibleTags = allTags[category].filter(tag => filteredTags.includes(tag));
+                if (!visibleTags.length) continue;
+                buildSection(category, visibleTags);
+                sectionBuilt = true;
+            } else if (typeof allTags[category] === 'object') {
+                for (const subCategory in allTags[category]) {
+                    const visibleTags = allTags[category][subCategory].filter(tag => filteredTags.includes(tag));
+                    if (!visibleTags.length) continue;
+                    buildSection(subCategory, visibleTags);
+                    sectionBuilt = true;
+                }
+            }
+        }
+
+        if (!sectionBuilt) {
+            filteredTags.forEach((tag) => {
+                loadTagCheckboxes(tag, tagDiv, containerId);
+            });
+        }
     });
 }
 
 
 function loadTagCheckboxes(tag, tagDivId, containerId) {
-    const tagDiv = document.getElementById(tagDivId)
-    const container = document.getElementById(containerId);
+    const container = typeof containerId === 'string' ? document.getElementById(containerId) : containerId;
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -408,53 +921,8 @@ function loadTagCheckboxes(tag, tagDivId, containerId) {
     checkbox.id = tag["tag-id"];
     checkbox.name = tag["display"];
 
-    currAnnotationsContainer = document.getElementById('curr-annotations')
-
-    checkbox.addEventListener('click', () => {
-        if (checkbox.checked) {
-            tagContainer = document.createElement('div');
-
-            tagCheckbox = document.createElement('input');
-            tagCheckbox.type = 'checkbox';
-            tagCheckbox.name = tag["display"];
-            tagCheckbox.id = tag["tag-id"];
-
-            tagCheckbox.style.padding = '10px';
-
-            tagText = document.createElement('label');
-            tagText.innerText = tag["display"];
-
-            tagContainer.appendChild(tagCheckbox);
-            tagContainer.appendChild(tagText);
-
-            tagExists = false;
-            if (tagDiv.childNodes.length == 0) {
-                tagExists = false;
-            } else {
-                tagDiv.childNodes.forEach(currContainer => {
-                    if (currContainer.childNodes[0].name == tagCheckbox.name) {
-                        tagExists = true;
-                    }
-                });
-            }
-
-            if (!tagExists) {
-                tagDiv.appendChild(tagContainer);
-            }
-            } else {
-            
-             
-             
-             for(let i=0; i < tagDiv.childNodes.length; i++) {
-                 
-                 
-                 
-                 if(tagDiv.childNodes[i].childNodes[0].id === tag["tag-id"]) {
-                     tagDiv.childNodes[i].remove();
-                     break; 
-                 }
-             }
-        }
+    checkbox.addEventListener('change', () => {
+        updateSummaryDisplayFromTabs();
     });
 
     const label = document.createElement('label');
@@ -469,19 +937,59 @@ function loadTagCheckboxes(tag, tagDivId, containerId) {
     container.appendChild(div);
 }
 
+function renderTagSections(data, containerId, tagDivId) {
+    const container = document.getElementById(containerId);
+    for (const category in data) {
+        if (Array.isArray(data[category])) {
+            const section = document.createElement('div');
+            section.className = 'tag-category-section';
+
+            const heading = document.createElement('h4');
+            heading.className = 'category-heading';
+            heading.textContent = category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+            const row = document.createElement('div');
+            row.className = 'category-tags-row';
+            row.id = `${containerId}-${category.replace(/[^a-z0-9]+/gi, '-')}`;
+
+            section.appendChild(heading);
+            section.appendChild(row);
+            container.appendChild(section);
+
+            data[category].forEach(tag => {
+                loadTagCheckboxes(tag, tagDivId, row);
+            });
+        } else if (typeof data[category] === 'object') {
+            for (const subCategory in data[category]) {
+                const section = document.createElement('div');
+                section.className = 'tag-category-section';
+
+                const heading = document.createElement('h4');
+                heading.className = 'category-heading';
+                heading.textContent = subCategory.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+                const row = document.createElement('div');
+                row.className = 'category-tags-row';
+                row.id = `${containerId}-${subCategory.replace(/[^a-z0-9]+/gi, '-')}`;
+
+                section.appendChild(heading);
+                section.appendChild(row);
+                container.appendChild(section);
+
+                data[category][subCategory].forEach(tag => {
+                    loadTagCheckboxes(tag, tagDivId, row);
+                });
+            }
+        }
+    }
+}
 
 let isVideoLoaded = false;
 function createTagCheckboxes() {
     getPedTags()
         .then((data) => {
             console.log("Fetched pedestrian tag data:", data);
-            for (const category in data) {
-                if (Array.isArray(data[category])) {
-                    data[category].forEach(tag => {
-                        loadTagCheckboxes(tag, "ped-tags", 'pedestrian-tag-container');
-                    });
-                }
-            }
+            renderTagSections(data, 'pedestrian-tag-container', 'ped-tags');
             setupSearchFunctionality(data, "ped-tags", 'pedestrian-tag-container', 'search-pedestrian-tag');
         })
         .catch((error) => {
@@ -491,11 +999,48 @@ function createTagCheckboxes() {
     getVehicleTags()
         .then((data) => {
             console.log("Fetched vehicle tag data:", data);
+            const vehicleContainer = document.getElementById('vehicle-tag-container');
             for (const category in data) {
                 if (Array.isArray(data[category])) {
+                    const section = document.createElement('div');
+                    section.className = 'tag-category-section';
+
+                    const heading = document.createElement('h4');
+                    heading.className = 'category-heading';
+                    heading.textContent = category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+                    const row = document.createElement('div');
+                    row.className = 'category-tags-row';
+                    row.id = `vehicle-${category.replace(/[^a-z0-9]+/gi, '-')}`;
+
+                    section.appendChild(heading);
+                    section.appendChild(row);
+                    vehicleContainer.appendChild(section);
+
                     data[category].forEach(tag => {
-                        loadTagCheckboxes(tag, "ego-tags", 'vehicle-tag-container');
+                        loadTagCheckboxes(tag, "ego-tags", row);
                     });
+                } else if (typeof data[category] === 'object') {
+                    for (const subCategory in data[category]) {
+                        const section = document.createElement('div');
+                        section.className = 'tag-category-section';
+
+                        const heading = document.createElement('h4');
+                        heading.className = 'category-heading';
+                        heading.textContent = subCategory.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+                        const row = document.createElement('div');
+                        row.className = 'category-tags-row';
+                        row.id = `vehicle-${subCategory.replace(/[^a-z0-9]+/gi, '-')}`;
+
+                        section.appendChild(heading);
+                        section.appendChild(row);
+                        vehicleContainer.appendChild(section);
+
+                        data[category][subCategory].forEach(tag => {
+                            loadTagCheckboxes(tag, "ego-tags", row);
+                        });
+                    }
                 }
             }
             setupSearchFunctionality(data, "ego-tags", 'vehicle-tag-container', 'search-vehicle-tag');
@@ -507,13 +1052,7 @@ function createTagCheckboxes() {
     getEnvironmentTags()
         .then((data) => {
             console.log("Fetched environment tag data:", data);
-            for (const category in data) {
-                if (Array.isArray(data[category])) {
-                    data[category].forEach(tag => {
-                        loadTagCheckboxes(tag, "env-tags", 'environment-tag-container');
-                    });
-                }
-            }
+            renderTagSections(data, 'environment-tag-container', 'env-tags');
             setupSearchFunctionality(data, "env-tags", 'environment-tag-container', 'search-environment-tag');
         })
         .catch((error) => {
@@ -523,13 +1062,7 @@ function createTagCheckboxes() {
     getArchetypesTags()
         .then((data) => {
             console.log("Fetched archetype data:", data);
-            for (const category in data) {
-                if (Array.isArray(data[category])) {
-                    data[category].forEach(tag => {
-                        loadTagCheckboxes(tag, "archetype-tags", 'archetypes-tag-container');
-                    });
-                }
-            }
+            renderTagSections(data, 'archetypes-tag-container', 'archetype-tags');
             setupSearchFunctionality(data, "archetype-tags", 'archetypes-tag-container', 'search-archetypes-tag');
         })
         .catch((error) => {
@@ -539,41 +1072,31 @@ function createTagCheckboxes() {
 
 
 function deleteAnnotation() {
-    tagDiv = document.getElementById('ped-tags');
-    for (let i = 0; i < tagDiv.childNodes.length; i++) {
-        if (tagDiv.childNodes[i].childNodes[0].checked) {
-            console.log(tagDiv.childNodes[i].childNodes[1].innerText)
-            tagDiv.childNodes[i].remove();
-            i--;
-        }
-    }
+    const summaryToSourceContainers = [
+        ['ped-tags', 'pedestrian-tag-container'],
+        ['ego-tags', 'vehicle-tag-container'],
+        ['env-tags', 'environment-tag-container'],
+        ['archetype-tags', 'archetypes-tag-container']
+    ];
 
-    tagDiv = document.getElementById('ego-tags');
-    for (let i = 0; i < tagDiv.childNodes.length; i++) {
-        if (tagDiv.childNodes[i].childNodes[0].checked) {
-            console.log(tagDiv.childNodes[i].childNodes[1].innerText)
-            tagDiv.childNodes[i].remove();
-            i--;
-        }
-    }
+    summaryToSourceContainers.forEach(([summaryId, sourceId]) => {
+        const summaryContainer = document.getElementById(summaryId);
+        const sourceContainer = document.getElementById(sourceId);
 
-    tagDiv = document.getElementById('env-tags');
-    for (let i = 0; i < tagDiv.childNodes.length; i++) {
-        if (tagDiv.childNodes[i].childNodes[0].checked) {
-            console.log(tagDiv.childNodes[i].childNodes[1].innerText)
-            tagDiv.childNodes[i].remove();
-            i--;
+        if (!summaryContainer || !sourceContainer) {
+            return;
         }
-    }
 
-    tagDiv = document.getElementById('archetype-tags');
-    for (let i = 0; i < tagDiv.childNodes.length; i++) {
-        if (tagDiv.childNodes[i].childNodes[0].checked) {
-            console.log(tagDiv.childNodes[i].childNodes[1].innerText)
-            tagDiv.childNodes[i].remove();
-            i--;
-        }
-    }
+        const selectedSummaryCheckboxes = summaryContainer.querySelectorAll('input[type="checkbox"]:checked');
+        selectedSummaryCheckboxes.forEach(summaryCheckbox => {
+            const sourceCheckbox = sourceContainer.querySelector(`input[type="checkbox"]#${CSS.escape(summaryCheckbox.id)}`);
+            if (sourceCheckbox) {
+                sourceCheckbox.checked = false;
+            }
+        });
+    });
+
+    updateSummaryDisplayFromTabs();
 }
 
 let lockInterval;
@@ -590,7 +1113,7 @@ function lockVideo() {
     if (!isVideoLocked) {
         const startFrameValue = parseInt(startFrameInput.value);
         const endFrameValue = parseInt(endFrameInput.value);
-        const fps = player.getVideoData().fps || 30;
+        const fps = getPlayerFps();
 
         if (annotationType === 'single frame') {
             if (!isNaN(startFrameValue)) {
@@ -613,7 +1136,7 @@ function lockVideo() {
                 if (lockInterval) clearInterval(lockInterval);
 
                 lockInterval = setInterval(() => {
-                    if (player.getPlayerState() !== YT.PlayerState.PAUSED) {
+                    if (player.getPlayerState() !== PLAYER_STATES.PAUSED) {
                         player.pauseVideo();
                     }
                 }, 100);
@@ -675,7 +1198,7 @@ function lockVideo() {
 }
 
 function updateUIForFrame(frame) {
-    const fps = player.getVideoData().fps || 30;
+    const fps = getPlayerFps();
     const duration = player.getDuration();
     const currentTime = frame / fps;
 
@@ -714,7 +1237,7 @@ function saveAnnotationsToLocalStorage() {
     const projectName = getProjectNameFromURL();
     const videoUrl = document.getElementById('video-url').value;
     const annotationData = {
-        fps: player.getVideoData().fps || 30,
+        fps: getPlayerFps(),
         multiFrameAnnotations: allAnnotations.filter(a => a instanceof MultiFrameAnnotation),
         singleFrameAnnotations: allAnnotations.filter(a => a instanceof SingleFrameAnnotation)
     };
@@ -741,6 +1264,7 @@ function loadAnnotationsFromLocalStorage() {
     const project = projects.find(p => p.projectName === projectName);
 
     if (project && project.data) {
+        currentVideoFps = project.data.fps || currentVideoFps;
         allAnnotations = [
             ...project.data.multiFrameAnnotations.map(a => new MultiFrameAnnotation(
                 a.frameStart, a.frameEnd, a.pedTags, a.egoTags, a.sceneTags, a.archetypeTags, a.notes
@@ -762,10 +1286,10 @@ function saveAllAnnotations() {
 
     const annotationType = document.querySelector('input[name="select_annotations"]:checked').value;
 
-    const pedestrianTags = getCheckedTags('ped-tags');
-    const vehicleTags = getCheckedTags('ego-tags');
-    const environmentTags = getCheckedTags('env-tags');
-    const archetypeTags = getCheckedTags('archetype-tags');
+    const pedestrianTags = getCheckedTags('pedestrian-tag-container');
+    const vehicleTags = getCheckedTags('vehicle-tag-container');
+    const environmentTags = getCheckedTags('environment-tag-container');
+    const archetypeTags = getCheckedTags('archetypes-tag-container');
     const additionalNotes = document.getElementById('additional-annotations').value;
 
     if (pedestrianTags.length === 0 && vehicleTags.length === 0 && environmentTags.length === 0 && archetypeTags.length === 0) {
@@ -795,7 +1319,14 @@ function saveAllAnnotations() {
         );
     }
 
-    allAnnotations.push(annotation);
+    if (editingAnnotationIndex !== null) {
+        // Update existing annotation
+        allAnnotations[editingAnnotationIndex] = annotation;
+        editingAnnotationIndex = null;
+    } else {
+        // Add new annotation
+        allAnnotations.push(annotation);
+    }
 
     try {
         updateAllAnnotationsDisplay();
@@ -822,7 +1353,7 @@ function uncheckAllCheckboxes(containerId) {
 
 function exportAnnotationsAsJSON() {
     const videoUrl = document.getElementById('video-url').value;
-    const fps = player.getVideoData().fps || 30;
+    const fps = getPlayerFps();
     const projectName = getProjectNameFromURL();
 
     const multiFrameAnnotations = allAnnotations.filter(a => a instanceof MultiFrameAnnotation);
@@ -869,7 +1400,7 @@ function exportAnnotationsAsJSON() {
 function updateCurrentFrame() {
     textContainer = document.getElementById('frame-count');
     const currentTime = player.getCurrentTime();
-    const fps = player.getVideoData().fps || 30; // Default to 30 if fps is not available
+    const fps = getPlayerFps();
     const currentFrame = Math.round(currentTime * fps);
     // console.log('Current Frame:', currentFrame);
     textContainer.textContent = "Frame: " + currentFrame;
@@ -889,12 +1420,20 @@ function togglePlayPause() {
             player.pauseVideo();
             playPauseButton.textContent = 'Play';
             isPlaying = false;
-            clearInterval(intervalId);
+            clearVideoUpdateInterval();
         } else {
-            player.playVideo();
+            const playResult = player.playVideo();
             playPauseButton.textContent = 'Pause';
             isPlaying = true;
-            intervalId = setInterval(updateSlider, 1000 / 30);
+            intervalId = setInterval(updateSlider, 1000 / DEFAULT_FPS);
+
+            if (playResult && typeof playResult.catch === 'function') {
+                playResult.catch(() => {
+                    playPauseButton.textContent = 'Play';
+                    isPlaying = false;
+                    clearVideoUpdateInterval();
+                });
+            }
         }
     }
 }
@@ -903,6 +1442,9 @@ function updateSlider() {
     if (player && player.getCurrentTime && player.getDuration) {
         const currentTime = player.getCurrentTime();
         const duration = player.getDuration();
+        if (!duration) {
+            return;
+        }
         const value = (currentTime / duration) * 1000;
         currentFrameSlider.value = value;
         updateCurrentFrame();
@@ -917,11 +1459,9 @@ function getYouTubeEmbedUrl(url) {
 function onPlayerReady(event) {
     console.log("YouTube player ready");
     player = event.target;
-    event.target.playVideo();
-
-    isVideoLoaded = true;
-    enableAllElements();
-    loadAnnotationsFromLocalStorage(); // Add this line
+    currentVideoType = 'youtube';
+    currentVideoFps = getStoredProjectFps();
+    onVideoReady(true);
 }
 
 function getArchetypesTags() {
@@ -987,24 +1527,27 @@ function enableAllElements() {
 
     // setupSearchFunctionality(, "env-tag", 'environment-tag-container', 'search-environment-tag');
 
+    if (useStartBtn) useStartBtn.disabled = false;
+    if (useEndBtn) useEndBtn.disabled = false;
 }
 
 let isPlaying = false;
 
 function onPlayerStateChange(event) {
-    if (event.data === YT.PlayerState.PLAYING && !isPlaying) {
+    if (event.data === PLAYER_STATES.PLAYING && !isPlaying) {
         playPauseButton.textContent = 'Pause';
         isPlaying = true;
-        intervalId = setInterval(updateSlider, 1000 / 30);
-    } else if (event.data === YT.PlayerState.PAUSED && isPlaying) {
+        clearVideoUpdateInterval();
+        intervalId = setInterval(updateSlider, 1000 / DEFAULT_FPS);
+    } else if (event.data === PLAYER_STATES.PAUSED && isPlaying) {
         playPauseButton.textContent = 'Play';
         isPlaying = false;
-        clearInterval(intervalId);
+        clearVideoUpdateInterval();
     }
 
-    if (isVideoLocked && event.data === YT.PlayerState.ENDED) {
+    if (isVideoLocked && event.data === PLAYER_STATES.ENDED) {
         const startFrameValue = parseInt(document.getElementById('start-frame').value);
-        const fps = player.getVideoData().fps || 30;
+        const fps = getPlayerFps();
         const startTime = startFrameValue / fps;
         player.seekTo(startTime, true);
         player.playVideo();
@@ -1017,12 +1560,6 @@ function createAnnotation(frameStart, frameEnd, pedTags, egoTags, sceneTags) {
     } else {
         return new MultiFrameAnnotation(frameStart, frameEnd, pedTags, egoTags, sceneTags);
     }
-}
-
-function getProjectNameFromURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const projectName = urlParams.get('projectName');
-    return projectName || 'Unnamed Project';
 }
 
 document.getElementById('home-button').addEventListener('click', function() {

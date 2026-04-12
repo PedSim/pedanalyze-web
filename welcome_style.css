@@ -1,0 +1,149 @@
+* {
+  box-sizing: border-box;
+}
+
+.logo {
+  font-size: 2rem;
+  color: #41A540;
+  align-items: left;
+  padding-right: 0px;
+}
+
+
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 40px;
+  border-bottom: 1px solid #e0e0e0;
+  z-index: 1000;
+}
+
+
+header nav ul {
+  list-style: none;
+  display: flex;
+  align-items: center;
+}
+
+header nav li {
+  margin-right: 20px;
+}
+
+header nav a {
+  font-size: 1.2rem;
+  color: #41A540;
+  text-decoration: none;
+  transition: all 0.3s ease-in-out;
+  position: relative;
+  padding-bottom: 3px; 
+}
+
+header nav a:hover {
+  color: #329437;
+}
+
+header nav a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0%;
+  height: 2px;
+  background: #41A540;
+  transition: width 0.3s ease;
+}
+
+header nav a:hover::after {
+  width: 100%;
+}
+
+h1 {
+  color: #333;
+}
+
+.welcome-title {
+  font-size: 100px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.welcome-subtitle {
+  font-size: 25px;
+  font-weight: 700;
+  color: #fff;
+  margin-top: 10px;
+}
+
+body {
+  background-image: url("background.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  font-family: Arial, sans-serif;
+  background-color: #e8f4ea;
+  margin: 0;
+  overflow-x: hidden;
+  padding-top: 190px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: #1f2937;
+}
+
+
+.hero button:hover {
+  border-color: #41A540;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+
+.button-row {
+  padding-top: 50px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.hero-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  width: 300px;
+  height: 120px;
+  padding: 20px;
+
+  background-color: #add8e6;
+  border: 1px solid #41A540;
+  border-radius: 10px;
+
+  color: #1f2937;
+  text-decoration: none;
+  cursor: pointer;
+
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.hero-button:hover {
+  background-color: #c8e6f4;
+  border-color: #329437;
+}
+
+.main-text {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.sub-text {
+  padding-top: 20px;
+  font-size: 14px;
+  opacity: 0.7;
+}
