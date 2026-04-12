@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Home</title>
+    <title>Home - PedAnalyze</title>
+    <link rel="icon" type="image/x-icon" href="simplified logo.png">
     <link rel="stylesheet" href="home_style.css" />
     <link
       rel="stylesheet"
@@ -17,15 +18,16 @@
   <body>
     <header>
       <div class="logo">
-        <img src="Ped_logo.png" alt="logo" width="150" height="150" />
+        <img src="Ped_logo.png" alt="logo" width="206" height="89" />
       </div>
       <nav>
         <ul>
-          <button id="openMerger" onclick="window.location.href='merger.html'" style="display: none;">
-            Open Merger
-          </button>
-          <li><a href="#"> </a></li>
-          <li><a href="index.html">Home</a></li>
+          <li>
+            <button id="openMerger" onclick="window.location.href='merger.html'" style="display: none;">
+            </button>
+          </li>
+          <li><a href="welcome.html">Home</a></li>
+          <li><a href="index.html">Get Started</a></li>
           <li><a href="about.html">About</a></li>
           <li><a href="contact.html">Contact</a></li>
           <li><a href="help.html">Help</a></li>
@@ -33,17 +35,31 @@
       </nav>
     </header>
 
-    <div class="container"></div>
-    <div class="new-project">
-      <h2>Create a new project</h2>
-      <input type="text" id="projectName" placeholder="Project name" />
-      <input type="text" id="videoLink" placeholder="Youtube video link" />
-      <button id="createNewProject">Create</button>
+    <div class="project-row">
+      <div class="new-project">
+        <h2>Create a New Project</h2>
+        <input type="text" id="projectName" placeholder="Project name" />
+        <input type="text" id="videoLink" placeholder="Youtube video link" />
+        <button id="createNewProject">Create</button>
+      </div>
+
+      <div class="new-project-upload">
+        <h2>Upload a New Project (File Upload)</h2>
+        <div class="drop-zone" id="dropZone">
+          <p>Drag & Drop Video Here or<br>
+            <span class="click-select">Click to Select</span>
+          </p>
+          <input type="file" id="video-file-input" accept="video/*" hidden>
+        </div>
+        <input type="text" id="projectName_upload" placeholder="Project name" />
+        <button id="createNewProjectUpload">Create</button>
+      </div>
     </div>
+
     <div class="edit-project">
       <h2>Open Existing Project</h2>
       <button id="load-json-file">Load JSON file</button>
-      <input type="file" id="json1-file" accept=".json" style="display: none;" />
+      <input type="file" id="json1-file" accept=".json" style="display: none;"/>
     </div>
     <h2>Past Projects</h2>
     <div id="pastDatabases"></div>

@@ -1,34 +1,9 @@
 {
-  "behavior" : [
-    {
-      "tag-id": "trip",
-      "display": "Trip",
-      "synonyms": ["trip", "stumble"]
-    },
-    {
-      "tag-id": "skid",
-      "display": "Skid",
-      "synonyms": ["slide", "skid", "sliding", "skidding"]
-    },
-    {
-      "tag-id": "fall",
-      "display": "Fall",
-      "synonyms": ["fall", "falling"]
-    },
+  "movement-patterns": [
     {
       "tag-id": "along-lane",
       "display": "Along lane",
       "synonyms": ["along lane"]
-    },
-    {
-      "tag-id": "group-walk",
-      "display": "Group walk",
-      "synonyms": ["group walk", "together"]
-    },
-    {
-      "tag-id": "group-disperse",
-      "display": "Group disperse",
-      "synonyms": ["group disperse", "separate"]
     },
     {
       "tag-id": "zig-zag",
@@ -39,16 +14,6 @@
       "tag-id": "brisk-walk",
       "display": "Brisk-walk",
       "synonyms": ["brisk walk", "fast walk"]
-    },
-    {
-      "tag-id": "re-group",
-      "display": "Re-group",
-      "synonyms": ["regroup", "rejoin"]
-    },
-    {
-      "tag-id": "dog-walk",
-      "display": "Dog walk",
-      "synonyms": ["dog walk"]
     },
     {
       "tag-id": "retreat",
@@ -71,6 +36,55 @@
       "synonyms": ["pause start"]
     },
     {
+      "tag-id": "crawling",
+      "display": "Crawling",
+      "synonyms": ["crawling", "crawl"]
+    },
+    {
+      "tag-id": "dancing",
+      "display": "Dancing",
+      "synonyms": ["dancing", "dance"]
+    }
+  ],
+
+  "group-dynamics": [
+    {
+      "tag-id": "group-walk",
+      "display": "Group walk",
+      "synonyms": ["group walk", "together"]
+    },
+    {
+      "tag-id": "group-disperse",
+      "display": "Group disperse",
+      "synonyms": ["group disperse", "separate"]
+    },
+    {
+      "tag-id": "re-group",
+      "display": "Re-group",
+      "synonyms": ["regroup", "rejoin"]
+    }
+  ],
+
+  "irregular-or-loss-of-control": [
+    {
+      "tag-id": "trip",
+      "display": "Trip",
+      "synonyms": ["trip", "stumble"]
+    },
+    {
+      "tag-id": "skid",
+      "display": "Skid",
+      "synonyms": ["slide", "skid", "sliding", "skidding"]
+    },
+    {
+      "tag-id": "fall",
+      "display": "Fall",
+      "synonyms": ["fall", "falling"]
+    }
+  ],
+
+  "crossing-behavior": [
+    {
       "tag-id": "cross-on-red",
       "display": "Cross on red",
       "synonyms": ["cross on red"]
@@ -81,6 +95,19 @@
       "synonyms": ["cross without crosswalk", "jaywalk"]
     },
     {
+      "tag-id": "crosswalk-detour",
+      "display": "Crosswalk detour",
+      "synonyms": ["crosswalk detour", "detour"]
+    },
+    {
+      "tag-id": "run-into-traffic",
+      "display": "Run into traffic",
+      "synonyms": ["run into traffic"]
+    }
+  ],
+
+  "object-interaction": [
+    {
       "tag-id": "drop-object",
       "display": "Drop object",
       "synonyms": ["drop object", "drop"]
@@ -89,27 +116,23 @@
       "tag-id": "pickup-object",
       "display": "Pickup object",
       "synonyms": ["pickup object", "pick up", "pickup"]
+    }
+  ],
+
+  "environmental-interaction": [
+    {
+      "tag-id": "dog-walk",
+      "display": "Dog walk",
+      "synonyms": ["dog walk"]
     },
     {
       "tag-id": "pop-out-occlusion",
       "display": "Pop-out occlusion",
       "synonyms": ["pop out occlusion", "emerge"]
-    },
-    {
-      "tag-id": "crawling",
-      "display": "Crawling",
-      "synonyms": ["crawling", "crawl"]
-    },
-    {
-      "tag-id": "dancing",
-      "display": "Dancing",
-      "synonyms": ["dancing", "dance"]
-    },
-    {
-      "tag-id": "crosswalk-detour",
-      "display": "Crosswalk detour",
-      "synonyms": ["crosswalk detour", "detour"]
-    },
+    }
+  ],
+
+  "communication-and-body-language": [
     {
       "tag-id": "gesturing",
       "display": "Gesturing",
@@ -126,8 +149,8 @@
       "synonyms": ["ignore traffic", "ignore"]
     }
   ],
-  
-  "instant-reaction" : [
+
+  "instant-reaction": [
     {
       "tag-id": "swerve",
       "display": "Swerve",
@@ -154,8 +177,8 @@
       "synonyms": ["frozen", "stop", "halt"]
     }
   ],
-  
-  "collision" : [
+
+  "collision-events": [
     {
       "tag-id": "collision",
       "display": "Collision",
@@ -167,18 +190,13 @@
       "synonyms": ["near miss", "almost hit"]
     },
     {
-      "tag-id": "run-into-traffic",
-      "display": "Run into traffic",
-      "synonyms": ["run into traffic"]
-    },
-    {
       "tag-id": "thrown-back",
       "display": "Thrown back",
       "synonyms": ["thrown back"]
     }
   ],
 
-  "interaction" : [
+  "interaction": [
     {
       "tag-id": "make-stop",
       "display": "Make stop",
@@ -215,8 +233,8 @@
       "synonyms": ["dragged on ground", "pulled on ground"]
     }
   ],
-  
-  "mental-state" : [
+
+  "attention-and-mental-state": [
     {
       "tag-id": "looking",
       "display": "Looking",
@@ -253,8 +271,8 @@
       "synonyms": ["preoccupied", "distracted"]
     }
   ],
-  
-  "intention" : [
+
+  "intent": [
     {
       "tag-id": "cross",
       "display": "Cross",

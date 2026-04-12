@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PedAnalyze: Pedestrian Behavior Annotator</title>
+  <link rel="icon" type="image/x-icon" href="simplified logo.png">
   <link rel="stylesheet" href="ontology_styles.css">
   <script src="https://www.youtube.com/iframe_api"></script>
 </head>
@@ -13,16 +14,23 @@
   <div class="container">
     <div class="left-column">
       <div class="header">
-        <div class="video-input">
-          <input type="text" id="video-url" placeholder="Enter YouTube video URL">
-          <button id="load-video" >Load Video</button>
+        <div class="video-input annotation-header">
+          <button id="home-button" class="back-button">Back</button>
+          <h2 id="annotation-title" class="annotation-title">Annotation</h2>
         </div>
-        <button id="home-button" style="position: absolute; top: 10px; right: 10px; padding: 8px 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Home</button>
+        <input type="text" id="video-url" placeholder="Enter YouTube video URL" hidden>
+        <button id="load-video" hidden>Load Video</button>
       </div>
       <div class="video-player" id="video-player">
       </div>
       <div class="video-navigation">
-        <div id="frame-count">Frame: 0</div>
+        <div class="frame-header">
+          <div id="frame-count">Frame: 0</div>
+          <div class="frame-set-buttons">
+            <button id="use-start-frame" disabled>Use as Start</button>
+            <button id="use-end-frame" disabled>Use as End</button>
+          </div>
+        </div>
         <input type="range" id="current-frame" min="0" max="1000" value="0" disabled>
         <div class="controls">
           <div class="frame-jump">
@@ -61,6 +69,7 @@
         </div>
       </div>
       <div class="current-annotations">
+        <h3 class="annotations-title">Summary of Annotation Tags</h3>
         <div id="curr-annotations" class="display-curr-annotations">
           <label for="ped-tags" id="ped-tags-label">Pedestrian Tags </label>
           <div class="ped-tags" id="ped-tags"></div>
@@ -75,7 +84,7 @@
           <button class="delete-annotations-btn" id="delete-annotations-btn" disabled>Delete</button>
         </div>
         <div class="additional-notes">
-          <label for="additional-annotations" id="additional-annotations-label">Additional Annotations: </label>
+          <label for="additional-annotations" id="additional-annotations-label">Additional Details/Notes: </label>
           <input type='text' id="additional-annotations" disabled>
         </div>
       </div>
@@ -119,16 +128,15 @@
           <button id="download-json-btn" class="save-annotations-btn" disabled>Download JSON</button>
         </div>
       </div>
-      <button id="save-all-annotations" class="save-annotations-btn" disabled>Save Annotations</button>
-    </div>
+      <div id="save-annotations-button"></div>
+        <button id="save-all-annotations" class="save-annotations-btn" disabled>Save Annotations</button>
+      </div>
+      </div>
   </div>
   <script>
     window.addEventListener('load', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const videoUrl = urlParams.get('video');
-      if (videoUrl) {
-        document.getElementById('video-url').value = videoUrl;
-        document.getElementById('load-video').click();
+      if (window.initializeVideoFromQuery) {
+        window.initializeVideoFromQuery();
       }
     });
   </script>

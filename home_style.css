@@ -1,24 +1,35 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: Arial, sans-serif;
-  background-color: #f0f0f0;
+  background-color: #e8f4ea;
   margin: 0;
   padding: 20px;
+  padding-top: 160px;
+  overflow-x: hidden;
+  color: #1f2937;
 }
-.container {
-  
-  padding: 20px;
-  background-color: white;
-  border: 1px solid #ccc;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}
-.new-project {
-  background-color: #add8e6;
-  align-items: center;
-  padding: 20px;
+
+.project-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px; /* space between the two boxes */
   margin-bottom: 20px;
 }
 
-.new-project input {
+
+.new-project, .new-project-upload {
+  background-color: #add8e6;
+  border-radius: 10px;
+  align-items: center;
+  padding: 20px;
+  width: 50%;
+  margin-bottom: 20px;
+}
+
+.new-project input, .new-project-upload input:not([type="file"]){
   display: block;
   width: 100%;
   margin-bottom: 10px;
@@ -27,20 +38,55 @@ body {
   border-radius: 5px;
 }
 
-.new-project button {
+.new-project button, .new-project-upload button {
   background-color: #000;
   color: #fff;
   padding: 10px 20px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  display: block;
+  margin: 0 auto;
 }
+
+.drop-zone {
+  border: 2px dashed #41A540;
+  border-radius: 10px;
+  padding: 40px;
+  text-align: center;
+  background-color: #add8e6;
+  color: #1f2937;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+  margin-bottom: 15px;
+}
+
+.drop-zone:hover {
+  background-color: #c4e7f0;
+}
+
+.drop-zone.dragover {
+  background-color: #b8dff1;
+  border-color: #2e8c37;
+}
+
+.click-select {
+  text-decoration: underline;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.click-select:hover {
+  color: #329437;
+}
+
 
 .edit-project {
   background-color: #add8e6;
   align-items: center;
   padding: 20px;
   margin-bottom: 20px;
+  border-radius: 10px;
 }
 
 .edit-project button {
@@ -55,19 +101,25 @@ body {
 
 .logo {
   font-size: 2rem;
-  color: #034692;
+  color: #41A540;
   align-items: left;
-  padding-right: 150px;
+  padding-right: 0px;
 }
 
 header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
   background-color: #ffffff;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 20px 100px;
- border-bottom: 1px solid #e0e0e0;
+  justify-content: space-between;
+  padding: 20px 40px;
+  border-bottom: 1px solid #e0e0e0;
+  z-index: 1000;
 }
+
 
 header nav ul {
   list-style: none;
@@ -81,21 +133,39 @@ header nav li {
 
 header nav a {
   font-size: 1.2rem;
-  color: #034692;
+  color: #41A540;
   text-decoration: none;
   transition: all 0.3s ease-in-out;
+  position: relative;
+  padding-bottom: 3px; 
 }
 
 header nav a:hover {
-  color: #0267c4;
+  color: #329437;
 }
+
+header nav a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0%;
+  height: 2px;
+  background: #41A540; /* underline color */
+  transition: width 0.3s ease;
+}
+
+header nav a:hover::after {
+  width: 100%;
+}
+
 
 h1 {
   color: #333;
 }
 
 button {
-  background-color: #4CAF50;
+  background-color: #41A540;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -106,7 +176,7 @@ button {
 }
 
 button:hover {
-  background-color: #45a049;
+  background-color: #329437;
 }
 
 
@@ -149,7 +219,6 @@ button:hover {
 
 .download-btn,
 .delete-btn {
-  background-color: #008CBA;
   color: white;
   border: none;
   padding: 10px;
@@ -160,16 +229,21 @@ button:hover {
   margin-top: 5px;
 }
 
+.download-btn {
+  background-color: #41A540;
+}
+
 .download-btn:hover {
-  background-color: #007B9A;
+  background-color: #329437;
 }
 
 .delete-btn {
-  background-color: #4CAF50;
+  background-color: #add8e6;
+  color: #1f2937;
 }
 
 .delete-btn:hover {
-  background-color: #45a049;
+  background-color: #c8e6f4;
 }
 
 

@@ -4,6 +4,11 @@
 document.addEventListener('DOMContentLoaded', () => {
     const projectContainer = document.getElementById('projectContainer');
     const createNewProjectBtn = document.getElementById('createNewProject');
+    const createNewProjectUploadBtn = document.getElementById('createNewProjectUpload');
+    const uploadProjectNameInput = document.getElementById('projectName_upload');
+    const UPLOAD_DB_NAME = 'PedAnalyzeUploads';
+    const UPLOAD_STORE_NAME = 'videos';
+    let uploadedVideoFile = null;
 
     const openMergerButton = document.getElementById('openMerger');
     openMergerButton.addEventListener('click', () => {
@@ -15,6 +20,60 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('json1-file').click();
     });
   
+    function openUploadDatabase() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(UPLOAD_DB_NAME, 1);
+
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(UPLOAD_STORE_NAME)) {
+                    db.createObjectStore(UPLOAD_STORE_NAME, { keyPath: 'id' });
+                }
+            };
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function saveUploadedVideoRecord(id, file) {
+        const db = await openUploadDatabase();
+
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(UPLOAD_STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(UPLOAD_STORE_NAME);
+
+            store.put({
+                id,
+                file,
+                name: file.name,
+                type: file.type,
+                lastModified: file.lastModified
+            });
+
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+        });
+    }
+
+    async function deleteUploadedVideoRecord(id) {
+        if (!id) {
+            return;
+        }
+
+        const db = await openUploadDatabase();
+
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(UPLOAD_STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(UPLOAD_STORE_NAME);
+
+            store.delete(id);
+
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+        });
+    }
+
     function loadJSONFile() {
         const jsonFileInput = document.getElementById('json1-file');
         const jsonFile = jsonFileInput.files[0];
@@ -33,6 +92,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // ---------------- DRAG & DROP UPLOAD LOGIC ----------------
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("video-file-input");
+
+    // Click to open file dialog
+    dropZone.addEventListener("click", () => fileInput.click());
+
+    // When file is selected normally
+    fileInput.addEventListener("change", () => {
+        handleFile(fileInput.files[0]);
+    });
+
+    // Drag over styling
+    dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("dragover");
+    });
+
+    // Remove styling when leaving
+    dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("dragover");
+    });
+
+    // Drop file
+    dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("dragover");
+
+        const file = e.dataTransfer.files[0];
+        handleFile(file);
+    });
+
+    // File handler
+    function handleFile(file) {
+        if (!file) return;
+
+        if (!file.type.startsWith('video/')) {
+            alert('Please upload a valid video file.');
+            return;
+        }
+
+        console.log("Uploaded file:", file);
+        uploadedVideoFile = file;
+        dropZone.querySelector('p').innerHTML = `${file.name}<br><span class="click-select">Click to Select Another File</span>`;
+    }
+
     // Add event listener for file input change
     document.getElementById('json1-file').addEventListener('change', loadJSONFile);
 
@@ -41,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
     projectContainer.innerHTML = '';
 
     projects.forEach(project => {
-        const newCard = createProjectCard(project.projectName, project.videoTitle, project.videoLink);
+        const newCard = createProjectCard(project);
         projectContainer.appendChild(newCard);
     });
 
@@ -69,7 +174,25 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(a);
     }
 
-    function createProjectCard(projectName, videoTitle, videoLink) {
+    function buildProjectUrl(project) {
+        const params = new URLSearchParams({
+            projectName: project.projectName
+        });
+
+        if (project.videoType === 'upload') {
+            params.set('videoType', 'upload');
+            if (project.uploadedVideoId) {
+                params.set('uploadedVideoId', project.uploadedVideoId);
+            }
+        } else if (project.videoLink) {
+            params.set('video', project.videoLink);
+        }
+
+        return `ontology.html?${params.toString()}`;
+    }
+
+    function createProjectCard(project) {
+        const { projectName, videoTitle } = project;
         const card = document.createElement('div');
         card.className = 'project-card';
         card.innerHTML = `
@@ -81,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         card.addEventListener('click', (event) => {
             if (!event.target.classList.contains('download-btn') && !event.target.classList.contains('delete-btn')) {
-                window.location.href = `ontology.html?video=${encodeURIComponent(videoLink)}&projectName=${encodeURIComponent(projectName)}`;
+                window.location.href = buildProjectUrl(project);
             }
         });
 
@@ -123,11 +246,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const deleteBtn = card.querySelector('.delete-btn');
-        deleteBtn.addEventListener('click', (event) => {
+        deleteBtn.addEventListener('click', async (event) => {
             event.stopPropagation();
             const confirmation = confirm('Are you sure you want to delete this project?');
             if (confirmation) {
-                deleteProject(projectName);
+                await deleteProject(project);
                 projectContainer.removeChild(card);
             }
         });
@@ -135,9 +258,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return card;
     }
 
-    function deleteProject(projectName) {
-        projects = projects.filter(project => project.projectName !== projectName);
+    async function deleteProject(projectToDelete) {
+        projects = projects.filter(project => project.projectName !== projectToDelete.projectName);
         localStorage.setItem('projects', JSON.stringify(projects));
+
+        if (projectToDelete.videoType === 'upload') {
+            try {
+                await deleteUploadedVideoRecord(projectToDelete.uploadedVideoId);
+            } catch (error) {
+                console.error('Failed to delete uploaded video record:', error);
+            }
+        }
     }
 
     createNewProjectBtn.addEventListener('click', async () => {
@@ -150,19 +281,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (projectName && videoId) {
             const videoTitle = await getYouTubeVideoTitle(videoId);
-            const newProject = { projectName, videoTitle, videoLink };
+            const newProject = { projectName, videoTitle, videoLink, videoType: 'youtube' };
 
             projects.push(newProject);
 
             localStorage.setItem('projects', JSON.stringify(projects));
 
-            const newCard = createProjectCard(projectName, videoTitle, videoLink);
+            const newCard = createProjectCard(newProject);
             projectContainer.appendChild(newCard);
 
             projectNameInput.value = '';
             videoLinkInput.value = '';
         } else {
             alert('Please enter a valid project name and YouTube video link.');
+        }
+    });
+
+    createNewProjectUploadBtn.addEventListener('click', async () => {
+        const projectName = uploadProjectNameInput.value.trim();
+
+        if (!projectName || !uploadedVideoFile) {
+            alert('Please enter a project name and upload a video file.');
+            return;
+        }
+
+        const uploadedVideoId = `upload-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        const newProject = {
+            projectName,
+            videoTitle: uploadedVideoFile.name,
+            videoLink: uploadedVideoFile.name,
+            videoType: 'upload',
+            uploadedVideoId
+        };
+
+        try {
+            await saveUploadedVideoRecord(uploadedVideoId, uploadedVideoFile);
+            projects.push(newProject);
+            localStorage.setItem('projects', JSON.stringify(projects));
+
+            const newCard = createProjectCard(newProject);
+            projectContainer.appendChild(newCard);
+
+            uploadProjectNameInput.value = '';
+            fileInput.value = '';
+            uploadedVideoFile = null;
+            dropZone.querySelector('p').innerHTML = 'Drag & Drop Video Here<br><span class="click-select">Click to Select</span>';
+        } catch (error) {
+            console.error('Failed to save uploaded video:', error);
+            alert('There was a problem saving the uploaded video. Please try again.');
         }
     });
 });
