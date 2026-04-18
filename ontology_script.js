@@ -21,6 +21,10 @@ let hasInitializedVideoFromQuery = false;
 let pendingYouTubeVideoUrl = null;
 let isYouTubeApiReady = false;
 
+// Archetype suggestion system
+let rawTagsData = null;
+let suggestedArchetypes = [];
+
 class Recording {
     constructor(videoPath, fps) {
         this.videoPath = videoPath;
@@ -511,18 +515,25 @@ function updateSummaryDisplayFromTabs() {
     const egoTagsDiv = document.getElementById('ego-tags');
     const envTagsDiv = document.getElementById('env-tags');
     const archetypeTagsDiv = document.getElementById('archetype-tags');
+    const suggestedArchetypesDiv = document.getElementById('suggested-archetypes');
 
     // Clear summary display
     pedTagsDiv.innerHTML = '';
     egoTagsDiv.innerHTML = '';
     envTagsDiv.innerHTML = '';
     archetypeTagsDiv.innerHTML = '';
+    if (suggestedArchetypesDiv) {
+        suggestedArchetypesDiv.innerHTML = '';
+    }
 
     // Populate from tab containers
     const pedChecked = getCheckedTags('pedestrian-tag-container');
     const egoChecked = getCheckedTags('vehicle-tag-container');
     const envChecked = getCheckedTags('environment-tag-container');
     const archeChecked = getCheckedTags('archetypes-tag-container');
+
+    // Calculate suggested archetypes based on selected pedestrian tags
+    calculateSuggestedArchetypes(pedChecked);
 
     pedChecked.forEach(tag => {
         const tagContainer = document.createElement('div');
@@ -566,6 +577,62 @@ function updateSummaryDisplayFromTabs() {
         envTagsDiv.appendChild(tagContainer);
     });
 
+    // Display suggested archetypes first
+    if (suggestedArchetypesDiv && suggestedArchetypes.length > 0) {
+        suggestedArchetypes.forEach(archetypeName => {
+            const tagContainer = document.createElement('div');
+            tagContainer.className = 'suggested-archetype-item';
+            tagContainer.style.cursor = 'pointer';
+            
+            const suggestion = document.createElement('span');
+            suggestion.className = 'suggested-badge';
+            suggestion.innerText = 'Suggested';
+            
+            const tagText = document.createElement('label');
+            tagText.innerText = archetypeName;
+            tagText.style.cursor = 'pointer';
+            
+            tagContainer.appendChild(suggestion);
+            tagContainer.appendChild(tagText);
+            
+            // Make suggested archetype clickable to add it to selection
+            tagContainer.addEventListener('click', () => {
+                // Find the checkbox in the archetype container with matching name
+                const archeContainer = document.getElementById('archetypes-tag-container');
+                if (archeContainer) {
+                    const checkboxes = archeContainer.querySelectorAll('input[type="checkbox"]');
+                    let found = false;
+                    
+                    // Try exact match first
+                    for (let checkbox of checkboxes) {
+                        if (checkbox.name === archetypeName || checkbox.name === archetypeName.replace(/-/g, ' ')) {
+                            checkbox.checked = true;
+                            checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                            found = true;
+                            break;
+                        }
+                    }
+                    
+                    // If not found, try case-insensitive match
+                    if (!found) {
+                        const lowerName = archetypeName.toLowerCase();
+                        for (let checkbox of checkboxes) {
+                            if (checkbox.name.toLowerCase() === lowerName || 
+                                checkbox.name.toLowerCase() === lowerName.replace(/-/g, ' ')) {
+                                checkbox.checked = true;
+                                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+            
+            suggestedArchetypesDiv.appendChild(tagContainer);
+        });
+    }
+
+    // Display manually selected archetypes
     archeChecked.forEach(tag => {
         const tagContainer = document.createElement('div');
         const tagCheckbox = document.createElement('input');
@@ -986,6 +1053,9 @@ function renderTagSections(data, containerId, tagDivId) {
 
 let isVideoLoaded = false;
 function createTagCheckboxes() {
+    // Load raw tags data for archetype suggestions
+    loadRawTagsData();
+
     getPedTags()
         .then((data) => {
             console.log("Fetched pedestrian tag data:", data);
@@ -1476,6 +1546,99 @@ function getArchetypesTags() {
             console.error("Unable to fetch data:", error);
             throw error;
         });
+}
+
+// Load raw_tags.json for archetype probability data
+function loadRawTagsData() {
+    return fetch("./raw_tags.json")
+        .then((result) => {
+            if (!result.ok) {
+                throw new Error(`HTTP error! Status: ${result.status}`);
+            }
+            return result.json();
+        })
+        .then((data) => {
+            rawTagsData = data;
+            console.log("Raw tags data loaded successfully");
+            return data;
+        })
+        .catch((error) => {
+            console.error("Unable to fetch raw_tags.json:", error);
+        });
+}
+
+// Calculate suggested archetypes based on selected pedestrian tags using log-sum for numerical stability
+function calculateSuggestedArchetypes(selectedPedTags) {
+    if (!rawTagsData || !rawTagsData.tag_to_archetype_probabilities) {
+        console.warn("Raw tags data not loaded");
+        return [];
+    }
+
+    if (selectedPedTags.length === 0) {
+        suggestedArchetypes = [];
+        return [];
+    }
+
+    // Get list of all archetypes from metadata
+    const allArchetypes = rawTagsData._meta.archetypes;
+    const tagProbs = rawTagsData.tag_to_archetype_probabilities;
+
+    // Initialize scores object for log-sum approach
+    const scores = {};
+    allArchetypes.forEach(arch => {
+        scores[arch] = 0;
+    });
+
+    // For each selected tag, add log probabilities (equivalent to multiplying probabilities)
+    let validTagsCount = 0;
+    selectedPedTags.forEach(tagArray => {
+        const tagKey = tagArray[1]; // The display name is at index 1
+        
+        // Normalize tag key: replace spaces with hyphens for lookup
+        const normalizedTagKey = tagKey.toLowerCase().replace(/\s+/g, '-');
+        
+        // Try exact match first, then normalized match
+        const probs = tagProbs[tagKey] || tagProbs[normalizedTagKey];
+        
+        if (probs && typeof probs === 'object') {
+            validTagsCount++;
+            allArchetypes.forEach(archetype => {
+                const prob = probs[archetype];
+                if (prob && prob > 0) {
+                    // Use log-sum for numerical stability when multiplying many probabilities
+                    scores[archetype] += Math.log(prob);
+                }
+            });
+        } else {
+            console.warn(`Tag "${tagKey}" not found in probability data`);
+        }
+    });
+
+    // If no valid tags were found, return empty suggestions
+    if (validTagsCount === 0) {
+        suggestedArchetypes = [];
+        return [];
+    }
+
+    // Convert log scores back to probabilities and sort
+    const normalizedScores = allArchetypes
+        .map(archetype => ({
+            name: archetype,
+            logScore: scores[archetype],
+            score: Math.exp(scores[archetype] / validTagsCount) // Normalize by number of tags
+        }))
+        .filter(item => item.logScore > -Infinity) // Only include archetypes with at least one tag match
+        .sort((a, b) => b.logScore - a.logScore); // Sort by log score (higher is better)
+
+    // Take top 5 archetypes
+    suggestedArchetypes = normalizedScores
+        .slice(0, 5)
+        .map(item => item.name);
+
+    // Debug logging
+    console.log(`Suggested archetypes for tags [${selectedPedTags.map(t => t[1]).join(', ')}]:`, suggestedArchetypes);
+
+    return suggestedArchetypes;
 }
 
 function enableAllElements() {
