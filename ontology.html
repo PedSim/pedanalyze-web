@@ -68,32 +68,11 @@
           </div>
         </div>
       </div>
-      <div class="current-annotations">
-        <h3 class="annotations-title">Summary of Annotation Tags</h3>
-        <div id="curr-annotations" class="display-curr-annotations">
-          <label for="ped-tags" id="ped-tags-label">Pedestrian Tags </label>
-          <div class="ped-tags" id="ped-tags"></div>
-          <label for="ego-tags" id="ego-tags-label">Vehicle Tags </label>
-          <div class="ego-tags" id="ego-tags"></div>
-          <label for="env-tags" id="env-tags-label">Environment Tags </label>
-          <div class="env-tags" id="env-tags"></div>
-          <label for="suggested-archetypes" id="suggested-archetypes-label">
-            <strong>Suggested Archetypes</strong>
-          </label>
-          <div class="suggested-archetypes" id="suggested-archetypes"></div>
-          <label for="archetype-tags" id="archetype-tags-label">Selected Archetype Tags </label>
-          <div class="archetype-tags" id="archetype-tags"></div>
-        </div>
-        <div class="delete-annotations-container">
-          <button class="delete-annotations-btn" id="delete-annotations-btn" disabled>Delete</button>
-        </div>
-        <div class="additional-notes">
-          <label for="additional-annotations" id="additional-annotations-label">Additional Details/Notes: </label>
-          <input type='text' id="additional-annotations" disabled>
-        </div>
-      </div>
     </div>
     <div class="right-column">
+      <div id="lock-hint" class="hint-banner" role="status" aria-live="polite" style="display: none;">
+        Lock the video to a frame (or frame range) to start annotating.
+      </div>
       <div class="tab-buttons">
         <button class="tab-button active" data-tab="pedestrian" disabled>Pedestrian</button>
         <button class="tab-button" data-tab="vehicle" disabled>Vehicle</button>
@@ -124,6 +103,12 @@
           <div class="search-bar">
             <input type="text" id="search-archetypes-tag" placeholder="Search Archetypes Tag" disabled>
           </div>
+          <div class="suggested-archetypes-section">
+            <label for="suggested-archetypes" id="suggested-archetypes-label">
+              <strong>Suggested Archetypes</strong>
+            </label>
+            <div class="suggested-archetypes" id="suggested-archetypes"></div>
+          </div>
           <div id="archetypes-tag-container" class="tag-container"></div>
         </div>
         <div id="all-content" class="tab-pane">
@@ -132,10 +117,56 @@
           <button id="download-json-btn" class="save-annotations-btn" disabled>Download JSON</button>
         </div>
       </div>
+      <div class="notes-panel">
+        <label for="additional-annotations" id="additional-annotations-label"><strong>Additional Details/Notes</strong></label>
+        <textarea id="additional-annotations" rows="2" placeholder="Optional notes…" disabled></textarea>
+      </div>
       <div id="save-annotations-button"></div>
-        <button id="save-all-annotations" class="save-annotations-btn" disabled>Save Annotations</button>
+      <button id="save-all-annotations" class="save-annotations-btn" disabled>Save Annotations</button>
+    </div>
+  </div>
+
+  <!-- Confirm-before-save modal -->
+  <div id="confirm-save-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="confirm-save-title">
+      <div class="modal-header">
+        <h3 id="confirm-save-title">Confirm annotation before saving</h3>
       </div>
+      <div class="modal-body">
+        <div class="modal-meta" id="confirm-save-meta"></div>
+
+        <div class="modal-section">
+          <label for="confirm-save-notes"><strong>Notes</strong></label>
+          <textarea id="confirm-save-notes" rows="3" placeholder="Optional notes…"></textarea>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">Selected tags (uncheck to remove)</div>
+          <div class="modal-tags-grid">
+            <div class="modal-tags-col">
+              <div class="modal-tags-heading">Pedestrian</div>
+              <div id="confirm-tags-ped" class="modal-tags-list"></div>
+            </div>
+            <div class="modal-tags-col">
+              <div class="modal-tags-heading">Vehicle</div>
+              <div id="confirm-tags-ego" class="modal-tags-list"></div>
+            </div>
+            <div class="modal-tags-col">
+              <div class="modal-tags-heading">Environment</div>
+              <div id="confirm-tags-env" class="modal-tags-list"></div>
+            </div>
+            <div class="modal-tags-col">
+              <div class="modal-tags-heading">Archetypes</div>
+              <div id="confirm-tags-arch" class="modal-tags-list"></div>
+            </div>
+          </div>
+        </div>
       </div>
+      <div class="modal-footer">
+        <button type="button" id="confirm-save-back" class="modal-btn secondary">Back</button>
+        <button type="button" id="confirm-save-confirm" class="modal-btn primary">Confirm &amp; Save</button>
+      </div>
+    </div>
   </div>
   <script>
     window.addEventListener('load', () => {

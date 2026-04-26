@@ -24,6 +24,10 @@ let isYouTubeApiReady = false;
 // Archetype suggestion system
 let rawTagsData = null;
 let suggestedArchetypes = [];
+let rawTagsDataPromise = null;
+
+// Confirm-before-save modal state
+let confirmSaveModalInitialized = false;
 
 class Recording {
     constructor(videoPath, fps) {
@@ -139,6 +143,7 @@ function onVideoReady(autoplay = true) {
     isVideoLoaded = true;
     enableAllElements();
     loadAnnotationsFromLocalStorage();
+    setAnnotationControlsEnabled(false);
 
     if (autoplay && player && player.playVideo) {
         const playResult = player.playVideo();
@@ -148,6 +153,38 @@ function onVideoReady(autoplay = true) {
             });
         }
     }
+}
+
+function setAnnotationControlsEnabled(enabled) {
+    const hint = document.getElementById('lock-hint');
+    if (hint) {
+        hint.style.display = enabled ? 'none' : 'block';
+    }
+
+    const idsToDisable = [
+        'search-pedestrian-tag',
+        'search-vehicle-tag',
+        'search-environment-tag',
+        'search-archetypes-tag',
+        'additional-annotations',
+        'save-all-annotations'
+    ];
+
+    idsToDisable.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !enabled;
+    });
+
+    // Tag checkboxes themselves
+    ['pedestrian-tag-container', 'vehicle-tag-container', 'environment-tag-container', 'archetypes-tag-container'].forEach(
+        (containerId) => {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+                cb.disabled = !enabled;
+            });
+        }
+    );
 }
 
 function createLocalVideoPlayerAdapter(videoElement) {
@@ -203,6 +240,7 @@ function loadYouTubeVideo(videoUrl) {
         },
         playerVars: {
             controls: 0,
+            origin: window.location.origin,
         },
     });
 }
@@ -291,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const saveButton = document.getElementById('save-all-annotations');
     if (saveButton) {
-        saveButton.addEventListener('click', saveAllAnnotations);
+        saveButton.addEventListener('click', openConfirmSaveModal);
     } else {
         console.error('Save button not found');
     }
@@ -464,12 +502,169 @@ document.addEventListener('DOMContentLoaded', () => {
     const lockVideoButton = document.getElementById('lock-video');
     lockVideoButton.addEventListener('click', lockVideo);
 
-    const deleteButton = document.getElementById('delete-annotations-btn');
-    deleteButton.addEventListener('click', deleteAnnotation);
-
     window.initializeVideoFromQuery = initializeVideoFromQuery;
     initializeVideoFromQuery();
 });
+
+function initConfirmSaveModalIfNeeded() {
+    if (confirmSaveModalInitialized) return;
+    confirmSaveModalInitialized = true;
+
+    const overlay = document.getElementById('confirm-save-modal');
+    const backBtn = document.getElementById('confirm-save-back');
+    const confirmBtn = document.getElementById('confirm-save-confirm');
+
+    if (!overlay || !backBtn || !confirmBtn) {
+        console.error('Confirm-save modal elements not found');
+        return;
+    }
+
+    backBtn.addEventListener('click', closeConfirmSaveModal);
+
+    // Click outside panel to close
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeConfirmSaveModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const isOpen = overlay.classList.contains('open');
+            if (isOpen) closeConfirmSaveModal();
+        }
+    });
+
+    confirmBtn.addEventListener('click', () => {
+        // Apply modal notes back to the real notes input
+        const modalNotes = document.getElementById('confirm-save-notes');
+        const notesInput = document.getElementById('additional-annotations');
+        if (modalNotes && notesInput) {
+            notesInput.value = modalNotes.value;
+        }
+
+        closeConfirmSaveModal();
+        saveAllAnnotations();
+    });
+}
+
+function openConfirmSaveModal() {
+    initConfirmSaveModalIfNeeded();
+
+    if (!isVideoLocked) {
+        alert('Please lock the video before saving annotations.');
+        return;
+    }
+
+    const pedestrianTags = getCheckedTags('pedestrian-tag-container');
+    const vehicleTags = getCheckedTags('vehicle-tag-container');
+    const environmentTags = getCheckedTags('environment-tag-container');
+    const archetypeTags = getCheckedTags('archetypes-tag-container');
+
+    if (
+        pedestrianTags.length === 0 &&
+        vehicleTags.length === 0 &&
+        environmentTags.length === 0 &&
+        archetypeTags.length === 0
+    ) {
+        alert('No tags selected. Please select at least one tag to save an annotation.');
+        return;
+    }
+
+    const overlay = document.getElementById('confirm-save-modal');
+    if (!overlay) return;
+
+    renderConfirmSaveModal({
+        annotationType: document.querySelector('input[name="select_annotations"]:checked')?.value || 'multi frame',
+        frameStart: lockedStartFrame,
+        frameEnd: lockedEndFrame,
+        tags: {
+            ped: pedestrianTags,
+            ego: vehicleTags,
+            env: environmentTags,
+            arch: archetypeTags
+        },
+        notes: document.getElementById('additional-annotations')?.value || ''
+    });
+
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+}
+
+function closeConfirmSaveModal() {
+    const overlay = document.getElementById('confirm-save-modal');
+    if (!overlay) return;
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+}
+
+function renderConfirmSaveModal(draft) {
+    const meta = document.getElementById('confirm-save-meta');
+    const modalNotes = document.getElementById('confirm-save-notes');
+
+    if (meta) {
+        const typeLabel = draft.annotationType === 'single frame' ? 'Single frame' : 'Multi frame';
+        const rangeLabel =
+            draft.annotationType === 'single frame'
+                ? `Frame: ${draft.frameStart ?? ''}`
+                : `Frames: ${draft.frameStart ?? ''}–${draft.frameEnd ?? ''}`;
+        meta.textContent = `${typeLabel} • ${rangeLabel}`;
+    }
+
+    if (modalNotes) {
+        modalNotes.value = draft.notes || '';
+    }
+
+    const mapping = [
+        { listId: 'confirm-tags-ped', sourceContainerId: 'pedestrian-tag-container', tags: draft.tags.ped },
+        { listId: 'confirm-tags-ego', sourceContainerId: 'vehicle-tag-container', tags: draft.tags.ego },
+        { listId: 'confirm-tags-env', sourceContainerId: 'environment-tag-container', tags: draft.tags.env },
+        { listId: 'confirm-tags-arch', sourceContainerId: 'archetypes-tag-container', tags: draft.tags.arch }
+    ];
+
+    mapping.forEach(({ listId, sourceContainerId, tags }) => {
+        const list = document.getElementById(listId);
+        if (!list) return;
+        list.innerHTML = '';
+
+        (tags || []).forEach(([tagId, tagName]) => {
+            const row = document.createElement('div');
+            row.className = 'modal-tag-item';
+
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.checked = true;
+            cb.id = `${listId}-${tagId}`;
+            cb.dataset.sourceContainerId = sourceContainerId;
+            cb.dataset.sourceTagId = tagId;
+
+            const label = document.createElement('label');
+            label.htmlFor = cb.id;
+            label.textContent = tagName;
+
+            const syncToSource = () => {
+                const source = document.querySelector(
+                    `#${sourceContainerId} input[type="checkbox"]#${CSS.escape(tagId)}`
+                );
+                if (source) {
+                    source.checked = cb.checked;
+                    source.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            };
+
+            cb.addEventListener('change', syncToSource);
+
+            // Make the whole row clickable (easier than hitting the small checkbox).
+            row.addEventListener('click', (event) => {
+                if (event.target === cb) return;
+                cb.checked = !cb.checked;
+                syncToSource();
+            });
+
+            row.appendChild(cb);
+            row.appendChild(label);
+            list.appendChild(row);
+        });
+    });
+}
 
 
 // function getCheckedTags(containerId, useTagId = false) {
@@ -507,145 +702,8 @@ function getCheckedTags(containerId) {
 }
 
 function updateCurrentAnnotationsFromCheckboxes() {
-    updateSummaryDisplayFromTabs();
-}
-
-function updateSummaryDisplayFromTabs() {
-    const pedTagsDiv = document.getElementById('ped-tags');
-    const egoTagsDiv = document.getElementById('ego-tags');
-    const envTagsDiv = document.getElementById('env-tags');
-    const archetypeTagsDiv = document.getElementById('archetype-tags');
-    const suggestedArchetypesDiv = document.getElementById('suggested-archetypes');
-
-    // Clear summary display
-    pedTagsDiv.innerHTML = '';
-    egoTagsDiv.innerHTML = '';
-    envTagsDiv.innerHTML = '';
-    archetypeTagsDiv.innerHTML = '';
-    if (suggestedArchetypesDiv) {
-        suggestedArchetypesDiv.innerHTML = '';
-    }
-
-    // Populate from tab containers
-    const pedChecked = getCheckedTags('pedestrian-tag-container');
-    const egoChecked = getCheckedTags('vehicle-tag-container');
-    const envChecked = getCheckedTags('environment-tag-container');
-    const archeChecked = getCheckedTags('archetypes-tag-container');
-
-    // Calculate suggested archetypes based on selected pedestrian tags
-    calculateSuggestedArchetypes(pedChecked);
-
-    pedChecked.forEach(tag => {
-        const tagContainer = document.createElement('div');
-        const tagCheckbox = document.createElement('input');
-        tagCheckbox.type = 'checkbox';
-        tagCheckbox.name = tag[1];
-        tagCheckbox.id = tag[0];
-        tagCheckbox.style.padding = '10px';
-        const tagText = document.createElement('label');
-        tagText.innerText = tag[1];
-        tagContainer.appendChild(tagCheckbox);
-        tagContainer.appendChild(tagText);
-        pedTagsDiv.appendChild(tagContainer);
-    });
-
-    egoChecked.forEach(tag => {
-        const tagContainer = document.createElement('div');
-        const tagCheckbox = document.createElement('input');
-        tagCheckbox.type = 'checkbox';
-        tagCheckbox.name = tag[1];
-        tagCheckbox.id = tag[0];
-        tagCheckbox.style.padding = '10px';
-        const tagText = document.createElement('label');
-        tagText.innerText = tag[1];
-        tagContainer.appendChild(tagCheckbox);
-        tagContainer.appendChild(tagText);
-        egoTagsDiv.appendChild(tagContainer);
-    });
-
-    envChecked.forEach(tag => {
-        const tagContainer = document.createElement('div');
-        const tagCheckbox = document.createElement('input');
-        tagCheckbox.type = 'checkbox';
-        tagCheckbox.name = tag[1];
-        tagCheckbox.id = tag[0];
-        tagCheckbox.style.padding = '10px';
-        const tagText = document.createElement('label');
-        tagText.innerText = tag[1];
-        tagContainer.appendChild(tagCheckbox);
-        tagContainer.appendChild(tagText);
-        envTagsDiv.appendChild(tagContainer);
-    });
-
-    // Display suggested archetypes first
-    if (suggestedArchetypesDiv && suggestedArchetypes.length > 0) {
-        suggestedArchetypes.forEach(archetypeName => {
-            const tagContainer = document.createElement('div');
-            tagContainer.className = 'suggested-archetype-item';
-            tagContainer.style.cursor = 'pointer';
-            
-            const suggestion = document.createElement('span');
-            suggestion.className = 'suggested-badge';
-            suggestion.innerText = 'Suggested';
-            
-            const tagText = document.createElement('label');
-            tagText.innerText = archetypeName;
-            tagText.style.cursor = 'pointer';
-            
-            tagContainer.appendChild(suggestion);
-            tagContainer.appendChild(tagText);
-            
-            // Make suggested archetype clickable to add it to selection
-            tagContainer.addEventListener('click', () => {
-                // Find the checkbox in the archetype container with matching name
-                const archeContainer = document.getElementById('archetypes-tag-container');
-                if (archeContainer) {
-                    const checkboxes = archeContainer.querySelectorAll('input[type="checkbox"]');
-                    let found = false;
-                    
-                    // Try exact match first
-                    for (let checkbox of checkboxes) {
-                        if (checkbox.name === archetypeName || checkbox.name === archetypeName.replace(/-/g, ' ')) {
-                            checkbox.checked = true;
-                            checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-                            found = true;
-                            break;
-                        }
-                    }
-                    
-                    // If not found, try case-insensitive match
-                    if (!found) {
-                        const lowerName = archetypeName.toLowerCase();
-                        for (let checkbox of checkboxes) {
-                            if (checkbox.name.toLowerCase() === lowerName || 
-                                checkbox.name.toLowerCase() === lowerName.replace(/-/g, ' ')) {
-                                checkbox.checked = true;
-                                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-                                break;
-                            }
-                        }
-                    }
-                }
-            });
-            
-            suggestedArchetypesDiv.appendChild(tagContainer);
-        });
-    }
-
-    // Display manually selected archetypes
-    archeChecked.forEach(tag => {
-        const tagContainer = document.createElement('div');
-        const tagCheckbox = document.createElement('input');
-        tagCheckbox.type = 'checkbox';
-        tagCheckbox.name = tag[1];
-        tagCheckbox.id = tag[0];
-        tagCheckbox.style.padding = '10px';
-        const tagText = document.createElement('label');
-        tagText.innerText = tag[1];
-        tagContainer.appendChild(tagCheckbox);
-        tagContainer.appendChild(tagText);
-        archetypeTagsDiv.appendChild(tagContainer);
-    });
+    // Kept for backward compatibility with edit flow; selection source of truth is tab checkboxes.
+    onTagSelectionChanged();
 }
 
 function parseAnnotationFrameRange(annotation) {
@@ -989,7 +1047,7 @@ function loadTagCheckboxes(tag, tagDivId, containerId) {
     checkbox.name = tag["display"];
 
     checkbox.addEventListener('change', () => {
-        updateSummaryDisplayFromTabs();
+        onTagSelectionChanged();
     });
 
     const label = document.createElement('label');
@@ -1001,7 +1059,28 @@ function loadTagCheckboxes(tag, tagDivId, containerId) {
     div.classList.add('tag-item');
     div.appendChild(checkbox);
     div.appendChild(label);
+
+    // Stop propagation so label/checkbox clicks don't also trigger the row toggle.
+    checkbox.addEventListener('click', (e) => e.stopPropagation());
+    label.addEventListener('click', (e) => e.stopPropagation());
+
+    // Make the whole row clickable (background click), without fighting native label behavior.
+    div.addEventListener('click', (event) => {
+        const target = event.target;
+        if (target === checkbox || target === label) return;
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
     container.appendChild(div);
+}
+
+function onTagSelectionChanged() {
+    // Centralized hook for any tag checkbox toggle.
+    // (Suggested archetypes and confirm-save modal will also depend on this.)
+    if (typeof renderSuggestedArchetypesFromSource === 'function') {
+        renderSuggestedArchetypesFromSource();
+    }
 }
 
 function renderTagSections(data, containerId, tagDivId) {
@@ -1054,7 +1133,7 @@ function renderTagSections(data, containerId, tagDivId) {
 let isVideoLoaded = false;
 function createTagCheckboxes() {
     // Load raw tags data for archetype suggestions
-    loadRawTagsData();
+    rawTagsDataPromise = loadRawTagsData();
 
     getPedTags()
         .then((data) => {
@@ -1134,6 +1213,7 @@ function createTagCheckboxes() {
             console.log("Fetched archetype data:", data);
             renderTagSections(data, 'archetypes-tag-container', 'archetype-tags');
             setupSearchFunctionality(data, "archetype-tags", 'archetypes-tag-container', 'search-archetypes-tag');
+            renderSuggestedArchetypesFromSource();
         })
         .catch((error) => {
             console.error("Error fetching Archetype data:", error);
@@ -1141,33 +1221,7 @@ function createTagCheckboxes() {
 }
 
 
-function deleteAnnotation() {
-    const summaryToSourceContainers = [
-        ['ped-tags', 'pedestrian-tag-container'],
-        ['ego-tags', 'vehicle-tag-container'],
-        ['env-tags', 'environment-tag-container'],
-        ['archetype-tags', 'archetypes-tag-container']
-    ];
-
-    summaryToSourceContainers.forEach(([summaryId, sourceId]) => {
-        const summaryContainer = document.getElementById(summaryId);
-        const sourceContainer = document.getElementById(sourceId);
-
-        if (!summaryContainer || !sourceContainer) {
-            return;
-        }
-
-        const selectedSummaryCheckboxes = summaryContainer.querySelectorAll('input[type="checkbox"]:checked');
-        selectedSummaryCheckboxes.forEach(summaryCheckbox => {
-            const sourceCheckbox = sourceContainer.querySelector(`input[type="checkbox"]#${CSS.escape(summaryCheckbox.id)}`);
-            if (sourceCheckbox) {
-                sourceCheckbox.checked = false;
-            }
-        });
-    });
-
-    updateSummaryDisplayFromTabs();
-}
+// Tag removal is done by unchecking the tag itself (uncheck = delete).
 
 let lockInterval;
 let lockedStartFrame = null;
@@ -1197,6 +1251,7 @@ function lockVideo() {
 
                 playPauseButton.disabled = true;
                 console.log("Video locked for single frame. isVideoLocked:", isVideoLocked);
+                setAnnotationControlsEnabled(true);
 
                 player.seekTo(targetTime, true);
                 player.pauseVideo();
@@ -1228,6 +1283,7 @@ function lockVideo() {
 
                 playPauseButton.disabled = false;
                 console.log("Video locked for multi frame. isVideoLocked:", isVideoLocked);
+                setAnnotationControlsEnabled(true);
 
                 player.seekTo(startTime, true);
 
@@ -1259,6 +1315,7 @@ function lockVideo() {
         isPlaying = false;
         lockedStartFrame = null;
         lockedEndFrame = null;
+        setAnnotationControlsEnabled(false);
 
         if (lockInterval) {
             clearInterval(lockInterval);
@@ -1290,17 +1347,15 @@ function checkVideoBounds(startTime, endTime) {
 }
 
 function clearCurrentAnnotations() {
-    document.getElementById('ped-tags').innerHTML = '';
-    document.getElementById('ego-tags').innerHTML = '';
-    document.getElementById('env-tags').innerHTML = '';
-    document.getElementById('archetype-tags').innerHTML = '';
-
-    document.getElementById('additional-annotations').value = '';
+    const notes = document.getElementById('additional-annotations');
+    if (notes) notes.value = '';
 
     uncheckAllCheckboxes('pedestrian-tag-container');
     uncheckAllCheckboxes('vehicle-tag-container');
     uncheckAllCheckboxes('environment-tag-container');
     uncheckAllCheckboxes('archetypes-tag-container');
+
+    onTagSelectionChanged();
 }
 
 function saveAnnotationsToLocalStorage() {
@@ -1523,7 +1578,9 @@ function updateSlider() {
 
 function getYouTubeEmbedUrl(url) {
     const videoId = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-    return videoId ? `https://www.youtube.com/embed/${videoId[1]}?enablejsapi=1` : null;
+    if (!videoId) return null;
+    const origin = encodeURIComponent(window.location.origin);
+    return `https://www.youtube.com/embed/${videoId[1]}?enablejsapi=1&origin=${origin}&playsinline=1`;
 }
 
 function onPlayerReady(event) {
@@ -1641,10 +1698,93 @@ function calculateSuggestedArchetypes(selectedPedTags) {
     return suggestedArchetypes;
 }
 
+async function renderSuggestedArchetypesFromSource() {
+    const suggestedArchetypesDiv = document.getElementById('suggested-archetypes');
+    if (!suggestedArchetypesDiv) return;
+
+    if (rawTagsDataPromise) {
+        try {
+            await rawTagsDataPromise;
+        } catch (_) {
+            // Ignore; calculateSuggestedArchetypes will handle missing data.
+        }
+    }
+
+    // Source of truth: currently checked pedestrian tags in the Pedestrian tab
+    const pedChecked = getCheckedTags('pedestrian-tag-container');
+    calculateSuggestedArchetypes(pedChecked);
+
+    suggestedArchetypesDiv.innerHTML = '';
+
+    if (!suggestedArchetypes || suggestedArchetypes.length === 0) {
+        return;
+    }
+
+    suggestedArchetypes.forEach(archetypeName => {
+        const tagContainer = document.createElement('div');
+        tagContainer.className = 'suggested-archetype-item';
+        tagContainer.style.cursor = 'pointer';
+
+        const suggestion = document.createElement('span');
+        suggestion.className = 'suggested-badge';
+        suggestion.innerText = 'Suggested';
+
+        const tagText = document.createElement('label');
+        tagText.innerText = archetypeName;
+        tagText.style.cursor = 'pointer';
+
+        tagContainer.appendChild(suggestion);
+        tagContainer.appendChild(tagText);
+
+        // Click to add/select in the archetype checkbox list
+        tagContainer.addEventListener('click', () => {
+            const archeContainer = document.getElementById('archetypes-tag-container');
+            if (!archeContainer) return;
+
+            const checkboxes = archeContainer.querySelectorAll('input[type="checkbox"]');
+            const normalize = (s) => String(s || '')
+                .toLowerCase()
+                .trim()
+                .replace(/[_\\s]+/g, '-')
+                .replace(/-+/g, '-');
+
+            const target = normalize(archetypeName);
+            let match = null;
+
+            for (const checkbox of checkboxes) {
+                if (normalize(checkbox.name) === target) {
+                    match = checkbox;
+                    break;
+                }
+            }
+
+            // Extra fallback: some displays may use spaces vs hyphens inconsistently
+            if (!match) {
+                for (const checkbox of checkboxes) {
+                    const n = normalize(checkbox.name).replace(/-/g, '');
+                    if (n === target.replace(/-/g, '')) {
+                        match = checkbox;
+                        break;
+                    }
+                }
+            }
+
+            if (match) {
+                match.checked = true;
+                match.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+
+        suggestedArchetypesDiv.appendChild(tagContainer);
+    });
+}
+
 function enableAllElements() {
     document.querySelectorAll('button').forEach(button => button.disabled = false);
 
     document.querySelectorAll('input').forEach(input => input.disabled = false);
+
+    document.querySelectorAll('textarea').forEach(textarea => textarea.disabled = false);
 
     document.getElementById('current-frame').disabled = false;
 
