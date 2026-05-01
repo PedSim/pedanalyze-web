@@ -36,15 +36,18 @@
     </header>
 
     <div class="project-row">
-      <div class="new-project">
+      <div class="project-panel">
         <h2>Create a New Project</h2>
         <input type="text" id="projectName" placeholder="Project name" />
-        <input type="text" id="videoLink" placeholder="Youtube video link" />
+        <input type="text" id="videoLink" placeholder="YouTube video link" />
         <button id="createNewProject">Create</button>
       </div>
 
-      <div class="new-project-upload">
-        <h2>Upload a New Project (File Upload)</h2>
+      <div class="project-panel">
+        <h2>Upload a Video (Local File)</h2>
+        <div class="panel-subtitle">
+          This creates a new project using a video from your computer.
+        </div>
         <div class="drop-zone" id="dropZone">
           <p>Drag & Drop Video Here or<br>
             <span class="click-select">Click to Select</span>
@@ -54,12 +57,16 @@
         <input type="text" id="projectName_upload" placeholder="Project name" />
         <button id="createNewProjectUpload">Create</button>
       </div>
-    </div>
 
-    <div class="edit-project">
-      <h2>Open Existing Project</h2>
-      <button id="load-json-file">Load JSON file</button>
-      <input type="file" id="json1-file" accept=".json" style="display: none;"/>
+      <div class="project-panel">
+        <h2>Import Project JSON</h2>
+        <div class="panel-subtitle">
+          Tip: You can select <strong>multiple JSON files</strong> to combine, as long as they all have the same YouTube link in <code>video_path</code>.
+        </div>
+        <button id="load-json-file">Import JSON file(s)</button>
+        <input type="file" id="json1-file" accept=".json" multiple style="display: none;"/>
+        <div id="json-import-status" role="status" aria-live="polite" style="margin-top: 12px; display: none;"></div>
+      </div>
     </div>
     <h2>Past Projects</h2>
     <div id="pastDatabases"></div>
