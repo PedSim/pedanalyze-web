@@ -831,7 +831,30 @@ function updateAllAnnotationsDisplay() {
 
     container.innerHTML = '';
 
-    allAnnotations.forEach((annotation, index) => {
+    const searchInput = document.getElementById('search-annotation-tag');
+    const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+    const indexed = allAnnotations.map((a, i) => ({ annotation: a, originalIndex: i }));
+
+    indexed.sort((a, b) => {
+        const aFrame = a.annotation instanceof MultiFrameAnnotation ? a.annotation.frameStart : a.annotation.frame;
+        const bFrame = b.annotation instanceof MultiFrameAnnotation ? b.annotation.frameStart : b.annotation.frame;
+        return aFrame - bFrame;
+    });
+
+    const filtered = searchTerm
+        ? indexed.filter(({ annotation }) => {
+            const allTags = [
+                ...annotation.pedTags,
+                ...annotation.egoTags,
+                ...annotation.sceneTags,
+                ...annotation.archetypeTags
+            ];
+            return allTags.some(tag => tag[1].toLowerCase().includes(searchTerm));
+        })
+        : indexed;
+
+    filtered.forEach(({ annotation, originalIndex }, displayIndex) => {
         const annotationElement = document.createElement('div');
         annotationElement.classList.add('annotation-item');
 
