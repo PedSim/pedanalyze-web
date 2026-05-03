@@ -336,6 +336,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadJsonBtn = document.getElementById('download-json-btn');
     downloadJsonBtn.addEventListener('click', exportAnnotationsAsJSON);
 
+    const annotationTagSearch = document.getElementById('search-annotation-tag');
+    if (annotationTagSearch) {
+        annotationTagSearch.addEventListener('input', updateAllAnnotationsDisplay);
+    }
+    
     //SET UP SEARCH FUNCTIONALITY
     // createTagCheckboxes();
 
