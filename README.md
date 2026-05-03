@@ -91,4 +91,4 @@ title = {Pedestrian Archetypes - The Must-Have Pedestrian Models for Autonomous 
 
 We’d love to hear from you!  
 If you have any questions, feature requests, or want to contribute, feel free to reach out via:
-- 📧 **Email**: [taoruih@gmail.com](mailto:taoruih@gmail.com)
+- 📧 **Email**: [taoruih@stanford.edu](mailto:taoruih@stanford.edu)
