@@ -89,6 +89,11 @@
       "tag-id": "street-vendor",
       "display": "The Street Vendor",
       "synonyms": ["street vendor", "vendor", "seller"]
+    },
+    {
+      "tag-id": "confronted",
+      "display": "The Confronted",
+      "synonyms": ["confronted", "block"]
     }
   ]
 }
