@@ -336,6 +336,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadJsonBtn = document.getElementById('download-json-btn');
     downloadJsonBtn.addEventListener('click', exportAnnotationsAsJSON);
 
+    const annotationTagSearch = document.getElementById('search-annotation-tag');
+    if (annotationTagSearch) {
+        annotationTagSearch.addEventListener('input', updateAllAnnotationsDisplay);
+    }
+    
     //SET UP SEARCH FUNCTIONALITY
     // createTagCheckboxes();
 
@@ -826,7 +831,30 @@ function updateAllAnnotationsDisplay() {
 
     container.innerHTML = '';
 
-    allAnnotations.forEach((annotation, index) => {
+    const searchInput = document.getElementById('search-annotation-tag');
+    const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+    const indexed = allAnnotations.map((a, i) => ({ annotation: a, originalIndex: i }));
+
+    indexed.sort((a, b) => {
+        const aFrame = a.annotation instanceof MultiFrameAnnotation ? a.annotation.frameStart : a.annotation.frame;
+        const bFrame = b.annotation instanceof MultiFrameAnnotation ? b.annotation.frameStart : b.annotation.frame;
+        return aFrame - bFrame;
+    });
+
+    const filtered = searchTerm
+        ? indexed.filter(({ annotation }) => {
+            const allTags = [
+                ...annotation.pedTags,
+                ...annotation.egoTags,
+                ...annotation.sceneTags,
+                ...annotation.archetypeTags
+            ];
+            return allTags.some(tag => tag[1].toLowerCase().includes(searchTerm));
+        })
+        : indexed;
+
+    filtered.forEach(({ annotation, originalIndex }, displayIndex) => {
         const annotationElement = document.createElement('div');
         annotationElement.classList.add('annotation-item');
 
@@ -839,35 +867,23 @@ function updateAllAnnotationsDisplay() {
             frameInfo = 'Frame: Unknown';
         }
 
-        pedTags = [];
-        for (let i = 0; i < annotation.pedTags.length; i++) {
-            pedTags[i] = annotation.pedTags[i][1];
-        }
-        egoTags = [];
-        for (let i = 0; i < annotation.egoTags.length; i++) {
-            egoTags[i] = annotation.egoTags[i][1];
-        }
-        sceneTags = [];
-        for (let i = 0; i < annotation.sceneTags.length; i++) {
-            sceneTags[i] = annotation.sceneTags[i][1];
-        }
-        archetypeTags = [];
-        for (let i = 0; i < annotation.archetypeTags.length; i++) {
-            archetypeTags[i] = annotation.archetypeTags[i][1];
-        }
+        const pedTags = annotation.pedTags.map(t => t[1]);
+        const egoTags = annotation.egoTags.map(t => t[1]);
+        const sceneTags = annotation.sceneTags.map(t => t[1]);
+        const archetypeTags = annotation.archetypeTags.map(t => t[1]);
 
         annotationElement.innerHTML = `
-            <h4>Annotation ${index + 1}</h4>
+            <h4>Annotation ${displayIndex + 1}</h4>
             <div class="annotation-frame-container">
                 <p class="annotation-frame-line"></p>
-                <button class="unlock-edit-btn" data-index="${index}">Unlock and edit</button>
+                <button class="unlock-edit-btn" data-index="${originalIndex}">Unlock and edit</button>
             </div>
-            <p>Pedestrian Tags: ${pedTags ? pedTags.join(', ') : 'None'}</p>
-            <p>Vehicle Tags: ${egoTags ? egoTags.join(', ') : 'None'}</p>
-            <p>Environment Tags: ${sceneTags ? sceneTags.join(', ') : 'None'}</p>
-            <p>Archetype Tags: ${archetypeTags ? archetypeTags.join(', ') : 'None'}</p>
+            <p>Pedestrian Tags: ${pedTags.length ? pedTags.join(', ') : 'None'}</p>
+            <p>Vehicle Tags: ${egoTags.length ? egoTags.join(', ') : 'None'}</p>
+            <p>Environment Tags: ${sceneTags.length ? sceneTags.join(', ') : 'None'}</p>
+            <p>Archetype Tags: ${archetypeTags.length ? archetypeTags.join(', ') : 'None'}</p>
             <p>Additional Notes: ${annotation.notes || 'None'}</p>
-            <button class="delete-annotation" data-index="${index}">Delete</button>
+            <button class="delete-annotation" data-index="${originalIndex}">Delete</button>
         `;
 
         const frameLine = annotationElement.querySelector('.annotation-frame-line');
