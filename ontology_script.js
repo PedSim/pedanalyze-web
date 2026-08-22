@@ -29,6 +29,85 @@ let rawTagsDataPromise = null;
 // Confirm-before-save modal state
 let confirmSaveModalInitialized = false;
 
+// Per-tab scroll memory for the shared .tab-content scroller.
+// The tag tabs always reopen at the top; "Show All Annotations" restores where you were.
+const tabScrollPositions = {};
+const SCROLL_RESET_TABS = ['pedestrian', 'vehicle', 'environment', 'archetypes'];
+
+// Annotations that have been re-saved via "Unlock and edit" this session, so they can be
+// visually marked as already worked through. Keyed on the annotation object rather than its
+// index, since deleteWholeAnnotation splices the array and shifts every later index.
+// WeakSet: session-only by design, and deleted annotations are not retained.
+const reviewedAnnotations = new WeakSet();
+
+// Tag selection registry
+// Source of truth for tag selection. The DOM is a projection of this, never the storage.
+// Needed because the search filter rebuilds a tag container from scratch on every
+// keystroke, which would otherwise wipe checked state (and drop filtered-out tags on save).
+// Keyed per container, so tag-ids that intentionally appear in more than one vocabulary
+// (e.g. "swerve" in both pedestrian and vehicle) stay independent selections.
+const TAG_CONTAINER_IDS = [
+    'pedestrian-tag-container',
+    'vehicle-tag-container',
+    'environment-tag-container',
+    'archetypes-tag-container'
+];
+
+// Map<containerId, Map<tagId, display>> — insertion ordered.
+const selectedTagsByContainer = new Map(TAG_CONTAINER_IDS.map(id => [id, new Map()]));
+let tagSelectionDelegationInitialized = false;
+
+function getSelectionMap(containerId) {
+    let map = selectedTagsByContainer.get(containerId);
+    if (!map) {
+        map = new Map();
+        selectedTagsByContainer.set(containerId, map);
+    }
+    return map;
+}
+
+function setTagSelected(containerId, tagId, display, selected) {
+    if (!tagId) return;
+    const map = getSelectionMap(containerId);
+    if (selected) {
+        map.set(tagId, display || tagId);
+    } else {
+        map.delete(tagId);
+    }
+}
+
+function clearSelectionRegistry(containerId) {
+    getSelectionMap(containerId).clear();
+}
+
+// Project registry state onto whatever checkboxes currently exist in the container.
+function syncCheckboxesFromRegistry(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const map = getSelectionMap(containerId);
+    container.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.checked = map.has(checkbox.dataset.tagId || checkbox.id);
+    });
+}
+
+// One delegated listener per container. The containers are static markup that is never
+// itself replaced, so this survives the search rebuild and knows which container it owns.
+function initTagSelectionDelegation() {
+    if (tagSelectionDelegationInitialized) return;
+    tagSelectionDelegationInitialized = true;
+
+    TAG_CONTAINER_IDS.forEach(containerId => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.addEventListener('change', (event) => {
+            const checkbox = event.target;
+            if (!checkbox || checkbox.type !== 'checkbox') return;
+            setTagSelected(containerId, checkbox.dataset.tagId || checkbox.id, checkbox.name, checkbox.checked);
+            onTagSelectionChanged();
+        });
+    });
+}
+
 class Recording {
     constructor(videoPath, fps) {
         this.videoPath = videoPath;
@@ -336,6 +415,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadJsonBtn = document.getElementById('download-json-btn');
     downloadJsonBtn.addEventListener('click', exportAnnotationsAsJSON);
 
+    initTagSelectionDelegation();
+
     //SET UP SEARCH FUNCTIONALITY
     // createTagCheckboxes();
 
@@ -387,12 +468,30 @@ document.addEventListener('DOMContentLoaded', () => {
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const tabName = button.getAttribute('data-tab');
+
+            // All five panes share one .tab-content scroller, so the outgoing tab's offset
+            // would otherwise carry over. Capture it before the active class is stripped —
+            // afterwards there is nothing left to key the saved position on.
+            const scroller = document.querySelector('.tab-content');
+            const previousTab = document.querySelector('.tab-button.active')?.getAttribute('data-tab');
+            if (scroller && previousTab) {
+                tabScrollPositions[previousTab] = scroller.scrollTop;
+            }
+
             tabButtons.forEach(btn => btn.classList.remove('active'));
             tabContents.forEach(content => content.classList.remove('active'));
             button.classList.add('active');
 
             const activeContent = document.getElementById(`${tabName}-content`);
             activeContent.classList.add('active');
+
+            // Tag tabs always start at the top; the annotations list keeps your place so
+            // the edit -> tag -> save -> back-to-list round trip doesn't lose it.
+            if (scroller) {
+                scroller.scrollTop = SCROLL_RESET_TABS.includes(tabName)
+                    ? 0
+                    : (tabScrollPositions[tabName] || 0);
+            }
 
             if (tabName === 'all') {
                 document.getElementById('download-json-btn').disabled = false;
@@ -641,13 +740,20 @@ function renderConfirmSaveModal(draft) {
             label.textContent = tagName;
 
             const syncToSource = () => {
-                const source = document.querySelector(
-                    `#${sourceContainerId} input[type="checkbox"]#${CSS.escape(tagId)}`
-                );
-                if (source) {
-                    source.checked = cb.checked;
-                    source.dispatchEvent(new Event('change', { bubbles: true }));
-                }
+                // Registry first — the source checkbox may not be rendered right now if a
+                // search filter is active, in which case this used to silently do nothing
+                // and the tag got saved anyway.
+                setTagSelected(sourceContainerId, tagId, tagName, cb.checked);
+
+                // Mirror onto the DOM if present. querySelectorAll rather than querySelector
+                // because a tag-id can legitimately appear more than once in a container.
+                document
+                    .querySelectorAll(`#${sourceContainerId} input[type="checkbox"]#${CSS.escape(tagId)}`)
+                    .forEach(source => { source.checked = cb.checked; });
+
+                // Called directly instead of re-dispatching 'change': the registry write
+                // already happened, and this still runs when no DOM node exists.
+                onTagSelectionChanged();
             };
 
             cb.addEventListener('change', syncToSource);
@@ -688,17 +794,12 @@ function renderConfirmSaveModal(draft) {
 let editingAnnotationIndex = null;
 
 function getCheckedTags(containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return [];
-
-    const checkedTags = [];
-    const checkboxes = container.querySelectorAll('input[type="checkbox"]:checked');
-    
-    checkboxes.forEach(checkbox => {
-        checkedTags.push([checkbox.id, checkbox.name]);
-    });
-    
-    return checkedTags;
+    // Read from the registry, not the DOM: this includes tags that are currently hidden
+    // by a search filter, which the DOM scrape used to silently drop at save time.
+    // Fresh arrays each call — saveAllAnnotations stores the result straight onto the
+    // annotation object, so handing out references into the registry would let a later
+    // clearCurrentAnnotations() mutate already-saved annotations.
+    return Array.from(getSelectionMap(containerId), ([tagId, display]) => [tagId, display]);
 }
 
 function updateCurrentAnnotationsFromCheckboxes() {
@@ -755,11 +856,9 @@ function onSavedAnnotationFrameClick(annotation) {
 }
 
 function hasCurrentSelectedTags() {
-    const tagContainers = ['pedestrian-tag-container', 'vehicle-tag-container', 'environment-tag-container', 'archetypes-tag-container'];
-    return tagContainers.some(containerId => {
-        const container = document.getElementById(containerId);
-        return container && container.querySelectorAll('input[type="checkbox"]:checked').length > 0;
-    });
+    // Registry-backed so the "your selected tags will be erased" confirm still fires for
+    // selections that a search filter is currently hiding.
+    return TAG_CONTAINER_IDS.some(containerId => getSelectionMap(containerId).size > 0);
 }
 
 function onUnlockAndEditClick(annotation, index) {
@@ -792,29 +891,107 @@ function onUnlockAndEditClick(annotation, index) {
 
     lockVideo();
 
-    // Populate tags
-    annotation.pedTags.forEach(tag => {
-        const checkbox = document.querySelector(`#pedestrian-tag-container input[id="${tag[0]}"]`);
-        if (checkbox) checkbox.checked = true;
-    });
-    annotation.egoTags.forEach(tag => {
-        const checkbox = document.querySelector(`#vehicle-tag-container input[id="${tag[0]}"]`);
-        if (checkbox) checkbox.checked = true;
-    });
-    annotation.sceneTags.forEach(tag => {
-        const checkbox = document.querySelector(`#environment-tag-container input[id="${tag[0]}"]`);
-        if (checkbox) checkbox.checked = true;
-    });
-    annotation.archetypeTags.forEach(tag => {
-        const checkbox = document.querySelector(`#archetypes-tag-container input[id="${tag[0]}"]`);
-        if (checkbox) checkbox.checked = true;
-    });
+    // Populate tags into the registry first, then project onto whatever is rendered.
+    // Going through the registry matters twice over: a search filter may be hiding some
+    // of these tags, and the tag JSON is fetched asynchronously, so this can run before
+    // any checkbox exists at all (which used to drop the whole selection silently).
+    const restoreSelection = (containerId, tags) => {
+        (tags || []).forEach(tag => {
+            if (!Array.isArray(tag)) return;
+            setTagSelected(containerId, tag[0], tag[1], true);
+        });
+        syncCheckboxesFromRegistry(containerId);
+    };
+
+    restoreSelection('pedestrian-tag-container', annotation.pedTags);
+    restoreSelection('vehicle-tag-container', annotation.egoTags);
+    restoreSelection('environment-tag-container', annotation.sceneTags);
+    restoreSelection('archetypes-tag-container', annotation.archetypeTags);
 
     // Set notes
     const notesInput = document.getElementById('additional-annotations');
     if (notesInput) notesInput.value = annotation.notes || '';
 
     updateCurrentAnnotationsFromCheckboxes();
+}
+
+const ANNOTATION_TAG_FIELDS = [
+    { key: 'pedTags', label: 'Pedestrian Tags', containerId: 'pedestrian-tag-container' },
+    { key: 'egoTags', label: 'Vehicle Tags', containerId: 'vehicle-tag-container' },
+    { key: 'sceneTags', label: 'Environment Tags', containerId: 'environment-tag-container' },
+    { key: 'archetypeTags', label: 'Archetype Tags', containerId: 'archetypes-tag-container' }
+];
+
+// Remove a single tag from an already-saved annotation, straight from the annotations list,
+// so refining an import no longer means a round trip through the tag tabs.
+function removeTagFromAnnotation(annotation, index, field, tagId, display) {
+    if (!confirm(`Remove tag "${display}" from Annotation ${index + 1}?`)) return;
+
+    const tags = annotation[field.key];
+    if (!Array.isArray(tags)) return;
+    const tagIndex = tags.findIndex(tag => Array.isArray(tag) && tag[0] === tagId);
+    if (tagIndex === -1) return;
+    tags.splice(tagIndex, 1);
+
+    // If this annotation is the one currently open for editing, the tag tabs still hold the
+    // old selection and the next save would silently put the tag straight back.
+    if (editingAnnotationIndex === index) {
+        setTagSelected(field.containerId, tagId, display, false);
+        syncCheckboxesFromRegistry(field.containerId);
+        onTagSelectionChanged();
+    }
+
+    saveAnnotationsToLocalStorage();
+    updateAllAnnotationsDisplay();
+}
+
+// Built with createElement rather than an innerHTML template: tag display names are data
+// and would otherwise need escaping.
+function buildAnnotationTagLine(annotation, index, field) {
+    const line = document.createElement('div');
+    line.className = 'annotation-tag-line';
+
+    const label = document.createElement('span');
+    label.className = 'annotation-tag-label';
+    label.textContent = `${field.label}:`;
+    line.appendChild(label);
+
+    const tags = Array.isArray(annotation[field.key]) ? annotation[field.key] : [];
+    if (!tags.length) {
+        const none = document.createElement('span');
+        none.className = 'annotation-tag-none';
+        none.textContent = 'None';
+        line.appendChild(none);
+        return line;
+    }
+
+    tags.forEach(tag => {
+        if (!Array.isArray(tag)) return;
+        const [tagId, display] = tag;
+
+        const chip = document.createElement('span');
+        chip.className = 'annotation-tag';
+
+        const text = document.createElement('span');
+        text.textContent = display;
+        chip.appendChild(text);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'annotation-tag-remove';
+        removeBtn.textContent = '\u00d7';
+        removeBtn.title = `Remove ${display}`;
+        removeBtn.setAttribute('aria-label', `Remove tag ${display}`);
+        removeBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            removeTagFromAnnotation(annotation, index, field, tagId, display);
+        });
+        chip.appendChild(removeBtn);
+
+        line.appendChild(chip);
+    });
+
+    return line;
 }
 
 function updateAllAnnotationsDisplay() {
@@ -824,11 +1001,22 @@ function updateAllAnnotationsDisplay() {
         return;
     }
 
+    // Emptying the container collapses the shared .tab-content scroller's height, which
+    // clamps scrollTop to 0. Only relevant while this pane is the visible one; when saving
+    // from another tab the pane is display:none and contributes no scroll height at all.
+    const scroller = document.querySelector('.tab-content');
+    const allPane = document.getElementById('all-content');
+    const isAllPaneActive = !!(allPane && allPane.classList.contains('active'));
+    const previousScrollTop = (isAllPaneActive && scroller) ? scroller.scrollTop : null;
+
     container.innerHTML = '';
 
     allAnnotations.forEach((annotation, index) => {
         const annotationElement = document.createElement('div');
         annotationElement.classList.add('annotation-item');
+        if (reviewedAnnotations.has(annotation)) {
+            annotationElement.classList.add('annotation-reviewed');
+        }
 
         let frameInfo;
         if (annotation instanceof SingleFrameAnnotation) {
@@ -839,36 +1027,23 @@ function updateAllAnnotationsDisplay() {
             frameInfo = 'Frame: Unknown';
         }
 
-        pedTags = [];
-        for (let i = 0; i < annotation.pedTags.length; i++) {
-            pedTags[i] = annotation.pedTags[i][1];
-        }
-        egoTags = [];
-        for (let i = 0; i < annotation.egoTags.length; i++) {
-            egoTags[i] = annotation.egoTags[i][1];
-        }
-        sceneTags = [];
-        for (let i = 0; i < annotation.sceneTags.length; i++) {
-            sceneTags[i] = annotation.sceneTags[i][1];
-        }
-        archetypeTags = [];
-        for (let i = 0; i < annotation.archetypeTags.length; i++) {
-            archetypeTags[i] = annotation.archetypeTags[i][1];
-        }
-
         annotationElement.innerHTML = `
             <h4>Annotation ${index + 1}</h4>
             <div class="annotation-frame-container">
                 <p class="annotation-frame-line"></p>
                 <button class="unlock-edit-btn" data-index="${index}">Unlock and edit</button>
             </div>
-            <p>Pedestrian Tags: ${pedTags ? pedTags.join(', ') : 'None'}</p>
-            <p>Vehicle Tags: ${egoTags ? egoTags.join(', ') : 'None'}</p>
-            <p>Environment Tags: ${sceneTags ? sceneTags.join(', ') : 'None'}</p>
-            <p>Archetype Tags: ${archetypeTags ? archetypeTags.join(', ') : 'None'}</p>
+            <div class="annotation-tag-lines"></div>
             <p>Additional Notes: ${annotation.notes || 'None'}</p>
             <button class="delete-annotation" data-index="${index}">Delete</button>
         `;
+
+        const tagLines = annotationElement.querySelector('.annotation-tag-lines');
+        if (tagLines) {
+            ANNOTATION_TAG_FIELDS.forEach(field => {
+                tagLines.appendChild(buildAnnotationTagLine(annotation, index, field));
+            });
+        }
 
         const frameLine = annotationElement.querySelector('.annotation-frame-line');
         if (frameLine) {
@@ -896,6 +1071,11 @@ function updateAllAnnotationsDisplay() {
             onUnlockAndEditClick(annotation, index);
         });
     });
+
+    if (previousScrollTop !== null) {
+        // Assigning past the new maximum clamps harmlessly.
+        scroller.scrollTop = previousScrollTop;
+    }
 }
 
 
@@ -1033,6 +1213,10 @@ function setupSearchFunctionality(allTags, tagDiv, containerId, searchInputId) {
                 loadTagCheckboxes(tag, tagDiv, containerId);
             });
         }
+
+        // Re-apply selection to the freshly rebuilt DOM. Synchronous within this handler,
+        // so there is no painted frame where the checkboxes look empty.
+        syncCheckboxesFromRegistry(containerId);
     });
 }
 
@@ -1045,10 +1229,13 @@ function loadTagCheckboxes(tag, tagDivId, containerId) {
     checkbox.disabled = !isVideoLoaded;
     checkbox.id = tag["tag-id"];
     checkbox.name = tag["display"];
+    // Logical key for the selection registry. Kept separate from .id because tag-ids are
+    // not globally unique across vocabularies, so .id alone is ambiguous document-wide.
+    checkbox.dataset.tagId = tag["tag-id"];
 
-    checkbox.addEventListener('change', () => {
-        onTagSelectionChanged();
-    });
+    // Change is handled by the delegated per-container listener (initTagSelectionDelegation),
+    // which survives the search rebuild. Do not add a per-checkbox listener here as well —
+    // it would double-fire onTagSelectionChanged and race renderSuggestedArchetypesFromSource.
 
     const label = document.createElement('label');
     label.htmlFor = tag["tag-id"];
@@ -1075,9 +1262,40 @@ function loadTagCheckboxes(tag, tagDivId, containerId) {
     container.appendChild(div);
 }
 
+const TAB_TO_TAG_CONTAINER = {
+    pedestrian: 'pedestrian-tag-container',
+    vehicle: 'vehicle-tag-container',
+    environment: 'environment-tag-container',
+    archetypes: 'archetypes-tag-container'
+};
+
+// Show how many tags are selected per tab. Important because a search filter can hide
+// selected tags, so the visible checkboxes alone understate what will actually be saved.
+function updateTabSelectionCounts() {
+    document.querySelectorAll('.tab-button').forEach(button => {
+        const containerId = TAB_TO_TAG_CONTAINER[button.getAttribute('data-tab')];
+        if (!containerId) return;
+
+        let badge = button.querySelector('.tab-count');
+        const count = getSelectionMap(containerId).size;
+
+        if (!count) {
+            if (badge) badge.remove();
+            return;
+        }
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'tab-count';
+            button.appendChild(badge);
+        }
+        badge.textContent = count;
+    });
+}
+
 function onTagSelectionChanged() {
     // Centralized hook for any tag checkbox toggle.
     // (Suggested archetypes and confirm-save modal will also depend on this.)
+    updateTabSelectionCounts();
     if (typeof renderSuggestedArchetypesFromSource === 'function') {
         renderSuggestedArchetypesFromSource();
     }
@@ -1140,6 +1358,9 @@ function createTagCheckboxes() {
             console.log("Fetched pedestrian tag data:", data);
             renderTagSections(data, 'pedestrian-tag-container', 'ped-tags');
             setupSearchFunctionality(data, "ped-tags", 'pedestrian-tag-container', 'search-pedestrian-tag');
+            // Tags are fetched async, so a selection may already be waiting in the registry
+            // (e.g. "Unlock and edit" clicked before this resolved). Paint it now.
+            syncCheckboxesFromRegistry('pedestrian-tag-container');
         })
         .catch((error) => {
             console.error("Error fetching Pedestrian data:", error);
@@ -1193,6 +1414,7 @@ function createTagCheckboxes() {
                 }
             }
             setupSearchFunctionality(data, "ego-tags", 'vehicle-tag-container', 'search-vehicle-tag');
+            syncCheckboxesFromRegistry('vehicle-tag-container');
         })
         .catch((error) => {
             console.error("Error fetching Vehicle data:", error);
@@ -1203,6 +1425,7 @@ function createTagCheckboxes() {
             console.log("Fetched environment tag data:", data);
             renderTagSections(data, 'environment-tag-container', 'env-tags');
             setupSearchFunctionality(data, "env-tags", 'environment-tag-container', 'search-environment-tag');
+            syncCheckboxesFromRegistry('environment-tag-container');
         })
         .catch((error) => {
             console.error("Error fetching Environment data:", error);
@@ -1213,6 +1436,7 @@ function createTagCheckboxes() {
             console.log("Fetched archetype data:", data);
             renderTagSections(data, 'archetypes-tag-container', 'archetype-tags');
             setupSearchFunctionality(data, "archetype-tags", 'archetypes-tag-container', 'search-archetypes-tag');
+            syncCheckboxesFromRegistry('archetypes-tag-container');
             renderSuggestedArchetypesFromSource();
         })
         .catch((error) => {
@@ -1355,6 +1579,17 @@ function clearCurrentAnnotations() {
     uncheckAllCheckboxes('environment-tag-container');
     uncheckAllCheckboxes('archetypes-tag-container');
 
+    // Reset the search filters so each tab visibly matches the now-empty selection.
+    // Runs after the unchecks, so the rebuild projects an already-cleared registry.
+    ['search-pedestrian-tag', 'search-vehicle-tag', 'search-environment-tag', 'search-archetypes-tag']
+        .forEach(id => {
+            const input = document.getElementById(id);
+            if (input && input.value !== '') {
+                input.value = '';
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
+
     onTagSelectionChanged();
 }
 
@@ -1447,6 +1682,9 @@ function saveAllAnnotations() {
     if (editingAnnotationIndex !== null) {
         // Update existing annotation
         allAnnotations[editingAnnotationIndex] = annotation;
+        // Mark it as worked through so the list shows at a glance what has been refined.
+        // Must happen before the index is cleared below.
+        reviewedAnnotations.add(annotation);
         editingAnnotationIndex = null;
     } else {
         // Add new annotation
@@ -1467,6 +1705,10 @@ function saveAllAnnotations() {
 }
 
 function uncheckAllCheckboxes(containerId) {
+    // Registry first. Programmatic .checked = false fires no change event, so the
+    // delegated listener never runs and there is no re-entrancy to worry about.
+    clearSelectionRegistry(containerId);
+
     const container = document.getElementById(containerId);
     if (container) {
         const checkboxes = container.querySelectorAll('input[type="checkbox"]');
