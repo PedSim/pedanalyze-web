@@ -647,3 +647,105 @@ label {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- Selected tag highlight -------------------------------------------------
+   Derived straight from live checkedness, so it stays correct for imported JSON,
+   unlock-and-edit, search rebuilds and the confirm modal with no JS bookkeeping. */
+.tag-item {
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.tag-item:has(input[type="checkbox"]:checked) {
+  background: #bbf7d0;
+  border-color: #41A540;
+  box-shadow: inset 0 0 0 1px #41A540;
+}
+
+.tag-item:has(input[type="checkbox"]:checked) label {
+  font-weight: 600;
+}
+
+.tag-item:has(input[type="checkbox"]:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.modal-tag-item:has(input[type="checkbox"]:checked) {
+  background: #bbf7d0;
+  border-color: #41A540;
+}
+
+/* Per-tab count of selected tags. A search filter can hide selected tags, so the
+   visible checkboxes alone understate what will actually be saved. */
+.tab-button:has(.tab-count) {
+  white-space: nowrap;
+}
+
+.tab-count {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #166534;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 17px;
+}
+
+/* ---- Annotations list ------------------------------------------------------ */
+.annotation-item.annotation-reviewed {
+  background: #bbf7d0;
+  border-color: #41A540;
+}
+
+.annotation-tag-line {
+  margin: 6px 0;
+  line-height: 1.9;
+}
+
+.annotation-tag-label {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.annotation-tag-none {
+  color: #6b7280;
+}
+
+.annotation-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 2px 6px;
+  margin: 2px;
+}
+
+.annotation-item.annotation-reviewed .annotation-tag {
+  background: #f8fafc;
+}
+
+/* Revealed on hover and on focus, so the button stays keyboard reachable. */
+.annotation-tag-remove {
+  opacity: 0;
+  border: none;
+  background: none;
+  color: #b91c1c;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  transition: opacity 0.15s ease;
+}
+
+.annotation-tag:hover .annotation-tag-remove,
+.annotation-tag-remove:focus {
+  opacity: 1;
+}
+
+.annotation-tag-remove:hover {
+  color: #7f1d1d;
+}
